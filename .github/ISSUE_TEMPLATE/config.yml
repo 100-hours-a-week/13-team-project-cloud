@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing Guide
+    url: https://github.com/100-hours-a-week/13-team-project-cloud/blob/main/CONTRIBUTING.md
+    about: 이슈 작성 가이드 및 라벨 설명
+  - name: Cloud Wiki
+    url: https://github.com/100-hours-a-week/13-team-project-wiki/wiki/Cloud-Wiki
+    about: Cloud Wiki 문서 확인

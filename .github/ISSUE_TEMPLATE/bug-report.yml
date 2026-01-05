@@ -1,0 +1,67 @@
+name: Bug Report
+description: 버그 리포트
+title: "[Bug] "
+labels: ["버그"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 버그 리포트
+        발견한 버그에 대해 알려주세요.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 버그 설명
+      description: 어떤 버그인지 설명해주세요
+      placeholder: 버그에 대한 명확한 설명
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 방법
+      description: 버그를 재현하는 단계
+      placeholder: |
+        1. '...'로 이동
+        2. '...'를 클릭
+        3. 오류 발생
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 예상 동작
+      description: 정상적으로 동작했을 때 예상되는 결과
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      description: 실제로 발생한 결과
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: 관련 환경 정보
+      placeholder: |
+        - OS:
+        - 브라우저/버전:
+        - 기타:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그/스크린샷
+      description: 관련 로그나 스크린샷 (선택사항)
+    validations:
+      required: false
