@@ -9,6 +9,18 @@ body:
         ## 버그 리포트
         발견한 버그에 대해 알려주세요.
 
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 심각도
+      options:
+        - Critical (서비스 전체 중단)
+        - High (주요 기능 장애)
+        - Medium (일부 기능 장애)
+        - Low (경미한 영향)
+    validations:
+      required: false
+
   - type: textarea
     id: description
     attributes:
