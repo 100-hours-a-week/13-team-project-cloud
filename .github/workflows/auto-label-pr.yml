@@ -1,0 +1,110 @@
+name: Auto Label PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  label-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Label PR by title and size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = pr.title || '';
+            const prNumber = pr.number;
+            const additions = pr.additions || 0;
+            const deletions = pr.deletions || 0;
+            const totalChanges = additions + deletions;
+
+            let currentLabels = pr.labels.map(l => l.name);
+
+            // === 타입 라벨링 ===
+            const labelMap = {
+              'feat': '기능요청',
+              'fix': '버그',
+              'docs': '문서',
+              'chore': '설정',
+              'refactor': '리팩토링',
+              'test': '테스트',
+              'style': '스타일'
+            };
+
+            const match = title.match(/^(feat|fix|docs|chore|refactor|test|style)(\(.+\))?:/i);
+
+            if (match) {
+              const type = match[1].toLowerCase();
+              const labelToAdd = labelMap[type];
+              const typeLabels = Object.values(labelMap);
+
+              for (const tl of typeLabels) {
+                if (currentLabels.includes(tl) && tl !== labelToAdd) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    name: tl
+                  }).catch(() => {});
+                }
+              }
+
+              if (labelToAdd && !currentLabels.includes(labelToAdd)) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: [labelToAdd]
+                });
+                console.log(`타입 라벨 추가: ${labelToAdd}`);
+              }
+            }
+
+            // === 사이즈 라벨링 ===
+            let sizeLabel;
+            if (totalChanges <= 10) {
+              sizeLabel = 'size/XS';
+            } else if (totalChanges <= 50) {
+              sizeLabel = 'size/S';
+            } else if (totalChanges <= 200) {
+              sizeLabel = 'size/M';
+            } else if (totalChanges <= 500) {
+              sizeLabel = 'size/L';
+            } else {
+              sizeLabel = 'size/XL';
+            }
+
+            const sizeLabels = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL'];
+
+            // 현재 라벨 다시 조회 (타입 라벨 추가 후 변경되었을 수 있음)
+            const { data: updatedPR } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            currentLabels = updatedPR.labels.map(l => l.name);
+
+            for (const sl of sizeLabels) {
+              if (currentLabels.includes(sl) && sl !== sizeLabel) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  name: sl
+                }).catch(() => {});
+              }
+            }
+
+            if (!currentLabels.includes(sizeLabel)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: [sizeLabel]
+              });
+              console.log(`사이즈 라벨 추가: ${sizeLabel} (${totalChanges} lines)`);
+            }
