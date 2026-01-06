@@ -120,8 +120,7 @@ GitHub Flow 기반의 간단한 브랜치 전략을 사용합니다.
 
 ```
 main
-├── feature/*   ← 기능/작업 브랜치
-└── hotfix/*    ← 긴급 수정 브랜치
+└── <type>/<이슈번호>-<작업명>
 ```
 
 ### 브랜치 설명
@@ -129,16 +128,20 @@ main
 | 브랜치 | 용도 | 예시 |
 |--------|------|------|
 | `main` | 배포 가능한 안정 상태 유지 | - |
-| `feature/*` | 새 기능, 작업, 개선 | `feature/ec2-setup`, `feature/cicd-pipeline` |
-| `hotfix/*` | 긴급 버그 수정 | `hotfix/security-patch` |
+| `feat/*` | 새 기능 추가 | `feat/123-login` |
+| `fix/*` | 버그 수정 | `fix/45-button-bug` |
+| `docs/*` | 문서 작업 | `docs/67-readme` |
+| `chore/*` | 설정, 빌드 등 | `chore/89-ci-setup` |
+
+> **이슈 자동 연결**: 브랜치명에 이슈 번호를 포함하면 PR 생성 시 자동으로 이슈가 연결됩니다.
 
 ### 작업 흐름
 
-1. **브랜치 생성**: `main`에서 `feature/작업명` 브랜치 생성
+1. **브랜치 생성**: `main`에서 `<type>/<이슈번호>-<작업명>` 브랜치 생성
    ```bash
    git checkout main
    git pull origin main
-   git checkout -b feature/작업명
+   git checkout -b feat/123-작업명
    ```
 
 2. **작업 및 커밋**: 커밋 컨벤션에 따라 작업
@@ -149,20 +152,16 @@ main
 
 3. **Push 및 PR 생성**
    ```bash
-   git push origin feature/작업명
+   git push origin feat/123-작업명
    ```
    - GitHub에서 PR 생성
    - PR 제목도 커밋 컨벤션 따르기 (예: `feat: EC2 인스턴스 설정 추가`)
+   - PR 본문에 `Refs #123`이 자동으로 추가됨 (이슈 연결)
+   - 이슈를 닫으려면 PR 템플릿에서 `Closes #123` 추가
 
 4. **코드 리뷰 후 머지**
    - 최소 1명 이상 리뷰 권장
    - 머지 후 feature 브랜치 삭제
-
-### 긴급 수정 (Hotfix)
-
-1. `main`에서 `hotfix/설명` 브랜치 생성
-2. 수정 후 PR 생성
-3. 빠른 리뷰 후 `main`에 머지
 
 ### 주의사항
 
