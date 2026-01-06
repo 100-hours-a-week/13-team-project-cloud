@@ -1,4 +1,4 @@
-# 프로젝트 이름 Cloud Wiki
+# 맛침반 Cloud Wiki
 
 ### [서비스 바로가기](https://example.com)
 
@@ -41,6 +41,7 @@
 ##### 2.2 배포 체크리스트
 
 **배포 전**
+
 - [ ] 배포할 Git 브랜치/커밋 해시 확인
 - [ ] Backend 로컬 빌드 성공 (`./gradlew clean build -x test`)
 - [ ] Frontend 로컬 빌드 성공 (`npm install && npm run build`)
@@ -48,6 +49,7 @@
 - [ ] 서비스 공지 작성 완료
 
 **배포 중**
+
 - [ ] 데이터베이스 백업 완료
 - [ ] 기존 파일 백업 완료 (`app.jar.bak`, `.next.bak`)
 - [ ] Backend/Frontend 서비스 중단 확인
@@ -56,6 +58,7 @@
 - [ ] Backend/Frontend 서비스 시작 확인
 
 **배포 후**
+
 - [ ] Health Check 통과 (Backend: 200 OK, Frontend: 200 OK)
 - [ ] 주요 기능 동작 확인 (로그인, 메인 페이지)
 - [ ] 에러 로그 없음 확인
@@ -402,13 +405,13 @@ graph TD
 
 본문에서 다루지 않은 상세 내용과 의사결정 배경은 아래 문서에서 확인할 수 있습니다.
 
-| 문서                                                                                                   | 설명                                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [인프라 의사결정 상세](./.github/cloud/docs/step1/reference-infrastructure-decisions.md)               | 온프레미스 제외 이유, AWS vs PaaS, GPU 인프라, EC2 아키텍처 대안, 인스턴스/비용 분석 |
-| [배포 상세 절차](./.github/cloud/docs/step1/reference-deployment-details.md)                           | 배포 개요, 준비사항 체크리스트, 롤백 절차, GPU 서버 배포, Nginx 설정                 |
-| [문제 시나리오 및 개선 계획](./.github/cloud/docs/step1/reference-improvement-plan.md)                 | 구체적 문제 시나리오, 임계점, 단계별 개선 로드맵                                     |
-| [RunPod 배포 방식 상세](./.github/cloud/docs/step1/reference-runpod-deployment-methods.md)             | GPU Serverless 배포 방법, Endpoint 관리                                              |
-| [벡터 DB 비교](./.github/cloud/docs/step1/reference-vector-db-comparison.md)                           | pgvector vs 전용 벡터 DB 비교 분석                                                   |
+| 문서                                                                                       | 설명                                                                                 |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [인프라 의사결정 상세](./.github/cloud/docs/step1/reference-infrastructure-decisions.md)   | 온프레미스 제외 이유, AWS vs PaaS, GPU 인프라, EC2 아키텍처 대안, 인스턴스/비용 분석 |
+| [배포 상세 절차](./.github/cloud/docs/step1/reference-deployment-details.md)               | 배포 개요, 준비사항 체크리스트, 롤백 절차, GPU 서버 배포, Nginx 설정                 |
+| [문제 시나리오 및 개선 계획](./.github/cloud/docs/step1/reference-improvement-plan.md)     | 구체적 문제 시나리오, 임계점, 단계별 개선 로드맵                                     |
+| [RunPod 배포 방식 상세](./.github/cloud/docs/step1/reference-runpod-deployment-methods.md) | GPU Serverless 배포 방법, Endpoint 관리                                              |
+| [벡터 DB 비교](./.github/cloud/docs/step1/reference-vector-db-comparison.md)               | pgvector vs 전용 벡터 DB 비교 분석                                                   |
 
 ---
 
