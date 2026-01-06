@@ -1,0 +1,61 @@
+name: Link Issue to PR
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  link-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Extract issue number from branch name
+        id: extract
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Branch: $BRANCH_NAME"
+
+          # 브랜치명에서 숫자 추출 (예: feature/123-login → 123)
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -1)
+
+          if [ -n "$ISSUE_NUMBER" ]; then
+            echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+            echo "Found issue: #$ISSUE_NUMBER"
+          else
+            echo "No issue number found in branch name"
+          fi
+
+      - name: Update PR body with issue link
+        if: steps.extract.outputs.issue_number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = '${{ steps.extract.outputs.issue_number }}';
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const currentBody = pr.data.body || '';
+            const issueLink = `Refs #${issueNumber}`;
+
+            // 이미 이슈 링크가 있으면 스킵
+            if (currentBody.includes(`#${issueNumber}`)) {
+              console.log('Issue link already exists in PR body');
+              return;
+            }
+
+            // PR 본문 끝에 이슈 링크 추가
+            const newBody = currentBody + '\n\n---\n' + issueLink;
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: newBody
+            });
+
+            console.log(`Added "${issueLink}" to PR body`);
