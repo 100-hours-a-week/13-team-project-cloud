@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'README.md'
+      - '.github/cloud/**'
   workflow_dispatch:
 
 jobs:
@@ -25,13 +26,18 @@ jobs:
       - name: Sync README to Wiki
         run: |
           cp README.md wiki/Cloud-Wiki.md
+
+          # .github/cloud 폴더 동기화 (삭제도 반영)
+          mkdir -p wiki/.github/cloud
+          rsync -av --delete .github/cloud/ wiki/.github/cloud/
+
           cd wiki
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Cloud-Wiki.md
+          git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "docs: sync from cloud repo README"
+            git commit -m "docs: sync from cloud repo"
             git push
           fi
