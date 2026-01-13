@@ -1,6 +1,6 @@
 name: Sprint Backlog
 description: 스프린트 백로그 항목 생성
-title: "[Backlog] "
+title: "[Cloud] "
 labels: ["백로그"]
 body:
   - type: markdown

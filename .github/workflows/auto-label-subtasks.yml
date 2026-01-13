@@ -1,0 +1,141 @@
+name: Auto Label Sub-issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label-subtask:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Check if issue is a subtask and add labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // 이슈 본문에서 부모 이슈 참조 확인 (GitHub의 tasklist 형식)
+            const body = issue.body || '';
+            let isSubtask = false;
+
+            // "Subtask of #123" 또는 "Part of #123" 형태 확인
+            const parentMatch = body.match(/(?:Subtask of|Part of|Parent issue:?)\s*#(\d+)/i);
+
+            if (parentMatch) {
+              const parentIssueNumber = parseInt(parentMatch[1]);
+
+              try {
+                // 부모 이슈 정보 가져오기
+                const { data: parentIssue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parentIssueNumber
+                });
+
+                // 부모 이슈가 "백로그" 라벨을 가지고 있는지 확인
+                const hasBacklogLabel = parentIssue.labels.some(label => label.name === '백로그');
+
+                if (hasBacklogLabel) {
+                  isSubtask = true;
+
+                  // 부모 이슈의 라벨 복사
+                  if (parentIssue.labels && parentIssue.labels.length > 0) {
+                    const labelNames = parentIssue.labels.map(label => label.name);
+
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issue.number,
+                      labels: labelNames
+                    });
+
+                    console.log(`Added labels from parent issue #${parentIssueNumber}: ${labelNames.join(', ')}`);
+                  }
+
+                  // 추가로 "서브태스크" 라벨 추가
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['서브태스크']
+                  });
+                } else {
+                  console.log(`Parent issue #${parentIssueNumber} is not a backlog item, skipping auto-labeling`);
+                }
+
+              } catch (error) {
+                console.log(`Error fetching parent issue: ${error.message}`);
+              }
+            } else {
+              // GitHub의 tasklist 기능으로 생성된 이슈는 특정 패턴을 가질 수 있음
+              // 이슈 제목이나 본문에 특정 패턴이 있는지 확인
+
+              // 모든 열린 이슈를 확인하여 현재 이슈가 다른 이슈의 tasklist에 있는지 확인
+              const { data: allIssues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              });
+
+              for (const potentialParent of allIssues) {
+                if (potentialParent.number === issue.number) continue;
+
+                // 부모 이슈가 "백로그" 라벨을 가지고 있는지 먼저 확인
+                const hasBacklogLabel = potentialParent.labels.some(label => label.name === '백로그');
+
+                if (!hasBacklogLabel) continue;
+
+                const parentBody = potentialParent.body || '';
+
+                // 부모 이슈의 본문에 현재 이슈 제목이 체크리스트로 있는지 확인
+                const taskPattern = new RegExp(`- \\[[ x]\\].*${issue.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+
+                if (taskPattern.test(parentBody)) {
+                  isSubtask = true;
+                  console.log(`Found parent backlog issue: #${potentialParent.number}`);
+
+                  // 부모 이슈의 라벨 복사
+                  if (potentialParent.labels && potentialParent.labels.length > 0) {
+                    const labelNames = potentialParent.labels.map(label => label.name);
+
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: issue.number,
+                      labels: labelNames
+                    });
+
+                    console.log(`Added labels from parent issue #${potentialParent.number}: ${labelNames.join(', ')}`);
+                  }
+
+                  // "서브태스크" 라벨 추가
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: ['서브태스크']
+                  });
+
+                  break;
+                }
+              }
+            }
+
+            // 서브태스크인 경우 제목에 [Cloud] 프리픽스 추가
+            if (isSubtask && !issue.title.startsWith('[Cloud]')) {
+              const newTitle = `[Cloud] ${issue.title}`;
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                title: newTitle
+              });
+
+              console.log(`Updated issue title to: ${newTitle}`);
+            }
