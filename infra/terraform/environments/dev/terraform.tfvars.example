@@ -1,0 +1,9 @@
+vpc_cidr           = "0.0.0.0/1"
+vpc_name           = "your-project-name"
+availability_zones = ["region_name"]
+vpc_subnet_cidrs   = ["0.0.0.0/2"]
+
+vpc_tags = {
+  Environment = "dev"
+  Project     = "your-project-name"
+}
