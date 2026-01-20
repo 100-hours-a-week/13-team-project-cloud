@@ -1,0 +1,68 @@
+name: Preventive Report
+description: 사전 예방 조치 기록
+title: "[Preventive] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 예방 조치 기록
+        예상되는 문제와 사전 대응 내용을 기록해주세요.
+
+  - type: dropdown
+    id: risk-level
+    attributes:
+      label: 리스크 수준
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 배경/맥락
+      description: 왜 이 조치가 필요했는지
+    validations:
+      required: false
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: 예상 문제
+      description: 미리 방지하려는 문제
+    validations:
+      required: true
+
+  - type: textarea
+    id: action
+    attributes:
+      label: 사전 조치
+      description: 어떤 예방 조치를 했는지
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: 검증/근거
+      description: 조치가 효과 있음을 확인한 방법
+    validations:
+      required: false
+
+  - type: textarea
+    id: follow-up
+    attributes:
+      label: 후속 작업
+      description: 남은 작업이나 추가 개선
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고
+      description: 관련 이슈/PR/문서 링크
+    validations:
+      required: false
