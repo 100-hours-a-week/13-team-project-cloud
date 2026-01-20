@@ -1,6 +1,6 @@
 name: Question
 description: 질문/논의
-title: "[Question] "
+title: "[Cloud] "
 labels: ["질문"]
 body:
   - type: markdown

@@ -1,6 +1,6 @@
 name: Incident Report
 description: 장애/인시던트 리포트
-title: "[Incident] "
+title: "[Cloud] "
 labels: ["장애"]
 body:
   - type: markdown

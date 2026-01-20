@@ -1,0 +1,177 @@
+name: PL Meeting
+description: PL 미팅 기록
+title: "[PL Meeting] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## PL 미팅 기록
+        사실 기반으로 작성하고, 구두 설명 없이 문서만으로 상황 파악이 가능하도록 작성해주세요.
+
+  - type: input
+    id: team-name
+    attributes:
+      label: 팀명
+    validations:
+      required: true
+
+  - type: input
+    id: meeting-date
+    attributes:
+      label: 미팅 일시
+      placeholder: "YYYY-MM-DD HH:MM"
+    validations:
+      required: true
+
+  - type: input
+    id: meeting-round
+    attributes:
+      label: 미팅 회차
+      placeholder: "예: 3주차 2회차"
+    validations:
+      required: true
+
+  - type: input
+    id: participants
+    attributes:
+      label: 참여 인원
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 1. 이전 PL 미팅 이후 구현 내용 (완료)
+
+  - type: textarea
+    id: implemented
+    attributes:
+      label: 구현한 기능
+      description: 완료 기준 명확히 작성
+    validations:
+      required: true
+
+  - type: textarea
+    id: pr-links
+    attributes:
+      label: 관련 PR / 커밋 링크
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 구현 범위 요약
+      description: 어디까지 되었는지 명확히 작성
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 2. 이전 PL 미팅 이후 추가로 진행한 작업
+
+  - type: textarea
+    id: additional-work
+    attributes:
+      label: 추가 작업 내용
+      description: 예상에 없었으나 실제로 진행한 작업
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-reason
+    attributes:
+      label: 추가 작업을 하게 된 이유
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 3. 구현하지 못한 내용
+
+  - type: textarea
+    id: not-implemented
+    attributes:
+      label: 미구현 기능
+      description: 계획 대비 미완료 항목
+    validations:
+      required: false
+
+  - type: textarea
+    id: not-implemented-reason
+    attributes:
+      label: 구현하지 못한 이유
+      description: 시간 / 기술 난이도 / 설계 변경 등
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 4. 현재 어려운 점
+
+  - type: textarea
+    id: technical-issues
+    attributes:
+      label: 기술적 문제
+      description: 기술적·구조적 어려움만 작성
+    validations:
+      required: false
+
+  - type: textarea
+    id: design-concerns
+    attributes:
+      label: 구조/설계 관련 고민
+    validations:
+      required: false
+
+  - type: textarea
+    id: tried-solutions
+    attributes:
+      label: 스스로 시도해본 해결 방법
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## 5. PL의 답변
+
+  - type: textarea
+    id: pl-feedback
+    attributes:
+      label: PL 피드백 요약
+      description: PL 미팅에서 받은 피드백을 수강생이 정리
+    validations:
+      required: false
+
+  - type: textarea
+    id: immediate-action
+    attributes:
+      label: 즉시 반영해야 할 사항
+    validations:
+      required: false
+
+  - type: textarea
+    id: future-action
+    attributes:
+      label: 추후 개선 또는 보류 사항
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 체크리스트
+      options:
+        - label: 실제 구현 기준으로 작성함
+        - label: PR / 커밋 링크 포함함
+        - label: 미구현 사유를 솔직하게 작성함
+        - label: 구두 설명 없이 문서만으로 상황 파악 가능함

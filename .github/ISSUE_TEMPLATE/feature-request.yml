@@ -1,6 +1,6 @@
 name: Feature Request
 description: 기능 요청/개선 제안
-title: "[Feature] "
+title: "[Cloud] "
 labels: ["기능요청"]
 body:
   - type: markdown
