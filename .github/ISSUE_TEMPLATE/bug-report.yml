@@ -1,6 +1,6 @@
 name: Bug Report
 description: 버그 리포트
-title: "[Bug] "
+title: "[Cloud] "
 labels: ["버그"]
 body:
   - type: markdown
