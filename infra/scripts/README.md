@@ -1,27 +1,36 @@
-# Init Scripts
+# Scripts
 
-Ubuntu 환경에서 초기 설치를 위한 스크립트 모음입니다.
+Ubuntu 환경에서 사용하는 인프라/배포 스크립트 모음입니다.
 
-## 스크립트 설명
+## 디렉토리 구조
 
-- `init.sh`: 공통 함수(권한/apt 업데이트) + 전체 설치 실행 엔트리
-- `install-nginx.sh`: Nginx 설치 및 서비스 활성화
-- `install-postgresql.sh`: PostgreSQL 설치 및 서비스 활성화
-- `install-redis.sh`: Redis 설치 및 서비스 활성화
-- `configure-postgresql.sh`: PostgreSQL 사용자/DB 생성 및 원격 접속 설정
+- `init/`: 기본 패키지 설치(nginx/postgresql/redis/python)
+- `ai/`: AI 추천 서비스 배포
+- `frontend/`: 프론트 롤백 스크립트
 
 ## 실행 명령
 
 ```bash
-# 전체 설치
-sudo infra/script/init/init.sh
+# 전체 설치 (nginx/postgresql/redis)
+sudo infra/scripts/init/init.sh
 
 # 개별 설치
-sudo infra/script/init/install-nginx.sh
-sudo infra/script/init/install-postgresql.sh
-sudo infra/script/init/install-redis.sh
+sudo infra/scripts/init/install-nginx.sh
+sudo infra/scripts/init/install-postgresql.sh
+sudo infra/scripts/init/install-redis.sh
+sudo infra/scripts/init/install-python.sh
 
-# PostgreSQL 원격 접속 설정/사용자 생성
-# configure-postgresql.sh 내부 변수를 먼저 수정한 뒤 실행
-sudo infra/script/init/configure-postgresql.sh
+# AI 추천 서비스 배포
+sudo infra/scripts/ai/init-deploy-recommend.sh
+
+# 프론트 롤백
+sudo infra/scripts/frontend/rollback.sh /var/www/html /var/www/html-backup
 ```
+
+## Python 설치 옵션
+
+- 기본 동작: apt로 `python3.11`이 있으면 설치, 없으면 pyenv로 설치
+- `USE_PYENV=1`: pyenv 강제 사용
+- `PYTHON_VERSION`: 설치 버전 지정 (기본 `3.11.9`)
+- `PYENV_ROOT`: pyenv 설치 경로 (기본 `/opt/pyenv`)
+- `SET_DEFAULT_PYTHON=1`: `/usr/local/bin/python3`를 pyenv 버전으로 연결
