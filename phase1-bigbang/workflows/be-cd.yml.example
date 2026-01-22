@@ -1,0 +1,208 @@
+# =============================================================================
+# Spring Boot Backend CD Pipeline
+# =============================================================================
+# 트리거: CI 완료 후 (main 브랜치만)
+# 순서: 아티팩트 다운로드 → 백업 → 배포 → Smoke Test → 알림
+# =============================================================================
+# test 용임
+
+name: Backend CD
+
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    types: [completed]
+    branches: [main]
+
+env:
+  JAR_NAME: app.jar
+  DEPLOY_PATH: /home/ubuntu/app
+  BACKUP_PATH: /home/ubuntu/app/backup
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # ===== Stage 1: 아티팩트 다운로드 =====
+      - name: Download JAR Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: ci.yml
+          run_id: ${{ github.event.workflow_run.id }}
+          name: application-jar
+          path: ./artifact
+
+      # ===== SSH 설정 =====
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      # ===== Stage 2: 서버 백업 =====
+      - name: Backup Current JAR
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            mkdir -p ${{ env.BACKUP_PATH }}
+
+            if [ -f "${{ env.DEPLOY_PATH }}/${{ env.JAR_NAME }}" ]; then
+              cp ${{ env.DEPLOY_PATH }}/${{ env.JAR_NAME }} ${{ env.BACKUP_PATH }}/${{ env.JAR_NAME }}.backup
+              echo "백업 완료"
+            else
+              echo "백업할 JAR 없음 (최초 배포)"
+            fi
+          EOF
+
+      # ===== Stage 3: 파일 전송 및 배포 =====
+      - name: Upload New JAR
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ${{ env.DEPLOY_PATH }}"
+          scp -i ~/.ssh/deploy_key \
+            ./artifact/*.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ env.DEPLOY_PATH }}/${{ env.JAR_NAME }}
+
+      - name: Deploy Application
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            cd ${{ env.DEPLOY_PATH }}
+            mkdir -p logs
+
+            PID=\$(pgrep -f "${{ env.JAR_NAME }}" || true)
+            if [ -n "\$PID" ]; then
+              echo "프로세스 종료 중... (PID: \$PID)"
+              kill -15 \$PID
+
+              for i in {1..30}; do
+                if ! ps -p \$PID > /dev/null 2>&1; then
+                  echo "정상 종료"
+                  break
+                fi
+                sleep 1
+              done
+
+              if ps -p \$PID > /dev/null 2>&1; then
+                kill -9 \$PID
+                sleep 2
+              fi
+            fi
+
+            export DB_URL="${{ secrets.DB_URL }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export REDIS_HOST="${{ secrets.REDIS_HOST }}"
+            export REDIS_PORT="${{ secrets.REDIS_PORT }}"
+            export REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+
+            nohup java -jar ${{ env.JAR_NAME }} > logs/app.log 2>&1 &
+            disown
+
+            sleep 15
+
+            if pgrep -f "${{ env.JAR_NAME }}" > /dev/null; then
+              echo "배포 완료 - 프로세스 실행 중"
+            else
+              echo "배포 실패 - 프로세스가 실행되지 않음"
+              exit 1
+            fi
+          EOF
+
+      # ===== Stage 4: Smoke Test =====
+      - name: Smoke Test
+        id: smoke_test
+        run: |
+          MAX_RETRY=10
+          RETRY_INTERVAL=5
+
+          for i in $(seq 1 $MAX_RETRY); do
+            echo "Smoke Test $i/$MAX_RETRY..."
+
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 10 \
+              http://${{ secrets.EC2_HOST }}:8080/actuator/health || echo "000")
+
+            echo "HTTP Code: $HTTP_CODE"
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "503" ]; then
+              echo "Smoke Test 통과 (HTTP: $HTTP_CODE)"
+              exit 0
+            fi
+
+            sleep $RETRY_INTERVAL
+          done
+
+          echo "Smoke Test 실패"
+          exit 1
+
+      # ===== 자동 롤백 (Smoke Test 실패 시) =====
+      - name: Rollback on Failure
+        if: failure() && steps.smoke_test.outcome == 'failure'
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            cd ${{ env.DEPLOY_PATH }}
+
+            PID=\$(pgrep -f "${{ env.JAR_NAME }}" || true)
+            if [ -n "\$PID" ]; then
+              kill -9 \$PID
+              sleep 2
+            fi
+
+            if [ -f "${{ env.BACKUP_PATH }}/${{ env.JAR_NAME }}.backup" ]; then
+              cp ${{ env.BACKUP_PATH }}/${{ env.JAR_NAME }}.backup ${{ env.DEPLOY_PATH }}/${{ env.JAR_NAME }}
+
+              export DB_URL="${{ secrets.DB_URL }}"
+              export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+              export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+              export REDIS_HOST="${{ secrets.REDIS_HOST }}"
+              export REDIS_PORT="${{ secrets.REDIS_PORT }}"
+              export REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+
+              nohup java -jar ${{ env.JAR_NAME }} > logs/app.log 2>&1 &
+              disown
+
+              sleep 15
+              echo "롤백 완료"
+            else
+              echo "백업 파일 없음 (최초 배포)"
+            fi
+          EOF
+
+      # ===== Stage 5: 알림 =====
+      - name: Notify Success
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "BE 배포 완료",
+                "color": 5763719,
+                "fields": [
+                  {"name": "브랜치", "value": "main", "inline": true},
+                  {"name": "CI Run", "value": "#${{ github.event.workflow_run.run_number }}", "inline": true}
+                ],
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }' \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Notify Failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "BE 배포 실패",
+                "description": "롤백이 실행되었습니다.",
+                "color": 15548997,
+                "fields": [
+                  {"name": "브랜치", "value": "main", "inline": true},
+                  {"name": "CI Run", "value": "#${{ github.event.workflow_run.run_number }}", "inline": true},
+                  {"name": "로그", "value": "[확인하기](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
+                ],
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }' \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}

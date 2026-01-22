@@ -1,8 +1,9 @@
 # =============================================================================
 # Spring Boot Backend CI Pipeline
-# 빅뱅 배포용 (컨테이너 미사용)
 # =============================================================================
-# 트리거: PR 생성/업데이트 시 실행
+# 트리거:
+#   - develop PR 생성/업데이트 시: 코드 검증
+#   - main push(머지) 시: 코드 검증 + 아티팩트 생성
 # 순서: Lint → Build → Static Analysis → Test → Artifact Upload
 # =============================================================================
 
@@ -10,24 +11,23 @@ name: Backend CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop]
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
 
 env:
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
   # ===========================================================================
   # Stage 1: Lint (코드 스타일 검사)
-  # ---------------------------------------------------------------------------
-  # 목적: 빠른 피드백을 위해 코드 스타일 오류를 가장 먼저 검출
-  # 도구: Checkstyle
   # ===========================================================================
   lint:
     name: Lint (Checkstyle)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,15 +54,12 @@ jobs:
 
   # ===========================================================================
   # Stage 2: Build (빌드)
-  # ---------------------------------------------------------------------------
-  # 목적: 코드 컴파일 및 의존성 검증
-  # 캐시: Gradle 의존성 캐시로 빌드 속도 향상
   # ===========================================================================
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: lint
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -76,7 +73,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # Gradle 의존성 캐시 - 빌드 속도 향상
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -92,18 +88,12 @@ jobs:
 
   # ===========================================================================
   # Stage 3: Static Analysis (SpotBugs)
-  # ---------------------------------------------------------------------------
-  # 목적: 바이트코드 기반 잠재적 버그 사전 탐지
-  # 실패 기준:
-  #   - 안전성 (NPE, 리소스 누수): High → 즉시 실패
-  #   - 동시성 (락 없는 공유 변수): High → 즉시 실패
-  #   - 비효율 코드: Medium 다수 → 실패
   # ===========================================================================
   static-analysis:
     name: Static Analysis (SpotBugs)
     runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -140,18 +130,12 @@ jobs:
 
   # ===========================================================================
   # Stage 4: Test (테스트)
-  # ---------------------------------------------------------------------------
-  # 목적: 핵심 도메인 로직의 결함을 빠르게 검출
-  # 구성:
-  #   - 단위 테스트: JUnit 5 + Mockito
-  #   - 통합 테스트: @SpringBootTest + H2
-  #   - 커버리지: JaCoCo (핵심 패키지만 80% 이상)
   # ===========================================================================
   test:
     name: Test
     runs-on: ubuntu-latest
     needs: static-analysis
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -178,9 +162,6 @@ jobs:
       - name: Run Tests with Coverage
         run: ./gradlew test jacocoTestReport --no-daemon
 
-      # JaCoCo 커버리지 검증 (핵심 패키지만)
-      # TODO: build.gradle에서 jacocoTestCoverageVerification 태스크 설정 필요
-      # 대상 패키지 예시: service.vote.*, service.restaurant.*
       - name: Verify Coverage (Core Packages)
         run: ./gradlew jacocoTestCoverageVerification --no-daemon
 
@@ -202,16 +183,12 @@ jobs:
 
   # ===========================================================================
   # Stage 5: Artifact Upload (산출물 업로드)
-  # ---------------------------------------------------------------------------
-  # 목적: 빌드 및 검증 결과물 보관
-  # 저장소: GitHub Actions Artifact (30일 보관)
-  # 산출물: 실행 가능한 JAR 파일
   # ===========================================================================
   artifact:
     name: Build Artifact
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -235,7 +212,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 실행 가능한 JAR 빌드 (테스트 스킵 - 이미 통과함)
       - name: Build JAR
         run: ./gradlew bootJar -x test --no-daemon
 
