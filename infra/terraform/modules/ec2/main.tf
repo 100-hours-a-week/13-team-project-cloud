@@ -17,3 +17,9 @@ resource "aws_instance" "app" {
     var.tags
   )
 }
+
+resource "aws_eip_association" "app" {
+  allocation_id       = var.eip_allocation_id
+  instance_id         = aws_instance.app.id
+  allow_reassociation = true
+}

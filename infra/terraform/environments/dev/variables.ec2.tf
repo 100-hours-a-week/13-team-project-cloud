@@ -18,6 +18,11 @@ variable "ec2_associate_public_ip_address" {
   type        = bool
 }
 
+variable "ec2_eip_allocation_id" {
+  description = "Allocation ID for the Elastic IP to associate"
+  type        = string
+}
+
 variable "ec2_ami_id" {
   description = "Override AMI ID (optional)"
   type        = string

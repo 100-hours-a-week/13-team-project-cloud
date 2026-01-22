@@ -53,6 +53,11 @@ variable "associate_public_ip_address" {
   type        = bool
 }
 
+variable "eip_allocation_id" {
+  description = "Elastic IP allocation ID to associate"
+  type        = string
+}
+
 variable "ami_id" {
   description = "Override AMI ID (optional)"
   type        = string
