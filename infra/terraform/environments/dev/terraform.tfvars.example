@@ -1,0 +1,20 @@
+vpc_cidr           = "0.0.0.0/1"
+vpc_name           = "your-project-name"
+availability_zones = ["region_name"]
+vpc_subnet_cidrs   = ["0.0.0.0/2"]
+
+vpc_tags = {
+  Environment = "dev"
+  Project     = "your-project-name"
+}
+
+ec2_instance_type    = "t4g.small"
+ec2_root_volume_size = 30
+ec2_root_volume_type = "gp3"
+ec2_ami_id           = "ami-0940de3547829dc20"
+ec2_key_name         = "your-keypair-name"
+ec2_subnet_index     = 0
+
+# Tighten SSH to your IP if possible.
+ec2_ssh_cidrs  = ["0.0.0.0/0"]
+ec2_http_cidrs = ["0.0.0.0/0"]
