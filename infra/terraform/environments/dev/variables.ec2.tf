@@ -13,14 +13,15 @@ variable "ec2_root_volume_type" {
   type        = string
 }
 
+variable "ec2_db_device_name" {
+  description = "Device name for DB EBS attachment"
+  type        = string
+  default     = "/dev/sdf"
+}
+
 variable "ec2_associate_public_ip_address" {
   description = "Whether to associate a public IP"
   type        = bool
-}
-
-variable "ec2_eip_allocation_id" {
-  description = "Allocation ID for the Elastic IP to associate"
-  type        = string
 }
 
 variable "ec2_ami_id" {
