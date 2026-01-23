@@ -18,6 +18,12 @@ resource "aws_instance" "app" {
   )
 }
 
+resource "aws_volume_attachment" "db" {
+  device_name = var.db_device_name
+  volume_id   = var.db_volume_id
+  instance_id = aws_instance.app.id
+}
+
 resource "aws_eip_association" "app" {
   allocation_id       = var.eip_allocation_id
   instance_id         = aws_instance.app.id

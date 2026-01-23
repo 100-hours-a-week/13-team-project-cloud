@@ -33,6 +33,17 @@ variable "root_volume_type" {
   type        = string
 }
 
+variable "db_volume_id" {
+  description = "DB EBS volume ID to attach"
+  type        = string
+}
+
+variable "db_device_name" {
+  description = "Device name for DB EBS attachment"
+  type        = string
+  default     = "/dev/sdf"
+}
+
 variable "key_name" {
   description = "EC2 key pair name for SSH (optional)"
   type        = string
