@@ -36,11 +36,16 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Sensitive files
 *.pem
 *.csv
-
-docs
-
 keys
 
+# Documentation
+docs
+
+# Claude
 .claude
+
+# .conf files
+*.conf
