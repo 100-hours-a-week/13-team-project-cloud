@@ -59,6 +59,11 @@ variable "http_cidrs" {
   type        = list(string)
 }
 
+variable "wireguard_cidrs" {
+  description = "CIDR blocks allowed to access WireGuard"
+  type        = list(string)
+}
+
 variable "associate_public_ip_address" {
   description = "Whether to associate a public IP"
   type        = bool

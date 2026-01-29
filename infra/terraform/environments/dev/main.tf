@@ -33,4 +33,5 @@ module "app_instance" {
   key_name                    = var.ec2_key_name
   ssh_cidrs                   = var.ec2_ssh_cidrs
   http_cidrs                  = var.ec2_http_cidrs
+  wireguard_cidrs             = var.ec2_wireguard_cidrs
 }

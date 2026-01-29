@@ -27,6 +27,14 @@ resource "aws_security_group" "app" {
     cidr_blocks = var.http_cidrs
   }
 
+  ingress {
+    description = "WireGuard"
+    from_port   = 51820
+    to_port     = 51820
+    protocol    = "udp"
+    cidr_blocks = var.wireguard_cidrs
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

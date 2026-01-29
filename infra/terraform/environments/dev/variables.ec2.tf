@@ -48,3 +48,8 @@ variable "ec2_http_cidrs" {
   description = "CIDR blocks allowed to access HTTP/HTTPS"
   type        = list(string)
 }
+
+variable "ec2_wireguard_cidrs" {
+  description = "CIDR blocks allowed to access WireGuard"
+  type        = list(string)
+}
