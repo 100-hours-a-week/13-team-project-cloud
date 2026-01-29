@@ -42,10 +42,15 @@ terraform.rc
 keys
 
 # Documentation
-docs
+docs-gguip1
+docs-rough
 
 # Claude
 .claude
 
 # .conf files
 *.conf
+
+data/
+
+ci_cd/
