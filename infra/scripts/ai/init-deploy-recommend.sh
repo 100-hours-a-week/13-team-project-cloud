@@ -29,7 +29,7 @@ apt-get install -y git curl ca-certificates
 log "Installing Python 3.11..."
 SKIP_APT_UPDATE=1 bash "${INIT_DIR}/install-python.sh"
 
-REPO_URL="https://github.com/gguip1/13-team-project-ai.git"
+REPO_URL="https://github.com/100-hours-a-week/13-team-project-ai.git"
 REPO_DIR="/home/ubuntu/13-team-project-ai"
 SERVICE_DIR="${REPO_DIR}/services/recommend"
 VENV_DIR="/home/ubuntu/.venvs/recommend"
