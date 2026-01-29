@@ -94,3 +94,41 @@ sudo systemctl status postgresql --no-pager
 sudo systemctl status redis-server --no-pager
 ss -lntp
 ```
+
+---
+
+## 10) System Configuration & Management (요약)
+
+서버의 주요 프로세스는 systemd를 통해 관리되며, 서버 재부팅 시 자동으로 시작됩니다.
+
+### 관리되는 서비스 목록
+| 서비스명 | 설명 | 설정 파일 위치 | 포트 |
+| :--- | :--- | :--- | :--- |
+| **moyeobab-api** | Spring Boot 백엔드 | /etc/systemd/system/moyeobab-api.service | 8080 |
+| **recommend** | FastAPI AI 추천 서비스 | /etc/systemd/system/recommend.service | 8000 |
+| **nginx** | 웹 서버 (Reverse Proxy) | 기본 패키지 (/etc/nginx/...) | 80, 443 |
+| **postgresql** | 데이터베이스 | 기본 패키지 (/etc/postgresql/...) | 5432 |
+| **redis-server** | 인메모리 캐시 | 기본 패키지 (/etc/redis/...) | 6379 |
+
+### 자동 시작 및 재시작 정책
+- **자동 시작 (Enable):** 모든 서비스는 systemctl enable이 적용되어 있어 서버가 껐다 켜져도(Reboot) 자동으로 실행됩니다.
+- **재시작 정책 (Restart):**
+    - 백엔드 및 AI 서비스: Restart=always가 설정되어 있어, 프로세스가 예기치 않게 종료(Crash)되면 5초 후 자동으로 재시작됩니다.
+    - 인프라 서비스(Nginx, DB 등): 패키지 기본 설정에 따르며, 일반적으로 실패 시 재시작되도록 구성되어 있습니다.
+
+### 로그 관리 (Logging)
+모든 서비스의 로그는 systemd-journald에 의해 통합 관리됩니다. 별도의 파일로 저장되지 않고 저널(Journal)에 기록됩니다.
+
+**로그 확인 방법:**
+```bash
+# 실시간 로그 확인 (tail -f)
+sudo journalctl -u moyeobab-api -f
+sudo journalctl -u recommend -f
+sudo journalctl -u nginx -f
+
+# 특정 서비스의 전체 로그 조회
+sudo journalctl -u postgresql
+
+# 시스템 전체 오류 로그 조회
+sudo journalctl -p err -xb
+```
