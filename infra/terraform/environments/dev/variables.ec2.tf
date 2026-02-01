@@ -53,3 +53,8 @@ variable "ec2_wireguard_cidrs" {
   description = "CIDR blocks allowed to access WireGuard"
   type        = list(string)
 }
+
+variable "ec2_private_ip" {
+  description = "Fixed private IP for the app instance"
+  type        = string
+}

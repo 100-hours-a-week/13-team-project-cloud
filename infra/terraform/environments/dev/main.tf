@@ -9,9 +9,20 @@ module "vpc" {
 }
 
 data "terraform_remote_state" "core" {
-  backend = "local"
+  backend = "s3"
   config = {
-    path = "../dev-core/terraform.tfstate"
+    bucket = "moyeo-bab-tfstate-dev"
+    key    = "environments/dev-core/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+data "terraform_remote_state" "monitoring" {
+  backend = "s3"
+  config = {
+    bucket = "moyeo-bab-tfstate-dev"
+    key    = "environments/dev-monitoring/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
@@ -34,4 +45,6 @@ module "app_instance" {
   ssh_cidrs                   = var.ec2_ssh_cidrs
   http_cidrs                  = var.ec2_http_cidrs
   wireguard_cidrs             = var.ec2_wireguard_cidrs
+  private_ip                  = var.ec2_private_ip
+  monitoring_security_group_id = data.terraform_remote_state.monitoring.outputs.monitoring_security_group_id
 }
