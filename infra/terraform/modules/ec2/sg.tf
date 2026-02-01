@@ -35,11 +35,34 @@ resource "aws_security_group" "app" {
     cidr_blocks = var.wireguard_cidrs
   }
 
+  dynamic "ingress" {
+    for_each = var.monitoring_security_group_id != "" ? [
+      { desc = "Node Exporter", port = 9100 },
+      { desc = "Nginx Exporter", port = 9113 },
+      { desc = "Redis Exporter", port = 9121 },
+      { desc = "Postgres Exporter", port = 9187 },
+      { desc = "Spring Boot Actuator", port = 8080 },
+      { desc = "FastAPI Metrics", port = 8000 },
+    ] : []
+
+    content {
+      description     = ingress.value.desc
+      from_port       = ingress.value.port
+      to_port         = ingress.value.port
+      protocol        = "tcp"
+      security_groups = [var.monitoring_security_group_id]
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 
   tags = merge(

@@ -78,3 +78,14 @@ variable "ami_id" {
   description = "Override AMI ID (optional)"
   type        = string
 }
+
+variable "private_ip" {
+  description = "Fixed private IP for the instance"
+  type        = string
+}
+
+variable "monitoring_security_group_id" {
+  description = "Monitoring server security group ID for metrics access"
+  type        = string
+  default     = ""
+}

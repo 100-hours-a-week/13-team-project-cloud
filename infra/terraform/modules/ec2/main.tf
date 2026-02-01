@@ -5,6 +5,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [aws_security_group.app.id]
   key_name                    = var.key_name
   associate_public_ip_address = var.associate_public_ip_address
+  private_ip                  = var.private_ip
 
   root_block_device {
     volume_size           = var.root_volume_size
@@ -19,9 +20,10 @@ resource "aws_instance" "app" {
 }
 
 resource "aws_volume_attachment" "db" {
-  device_name = var.db_device_name
-  volume_id   = var.db_volume_id
-  instance_id = aws_instance.app.id
+  device_name                    = var.db_device_name
+  volume_id                      = var.db_volume_id
+  instance_id                    = aws_instance.app.id
+  stop_instance_before_detaching = true
 }
 
 resource "aws_eip_association" "app" {
