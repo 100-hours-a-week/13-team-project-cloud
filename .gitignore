@@ -54,3 +54,9 @@ docs-rough
 data/
 
 ci_cd/
+
+.env
+
+*.conf
+
+monitoring
