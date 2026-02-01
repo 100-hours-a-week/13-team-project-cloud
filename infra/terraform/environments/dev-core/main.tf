@@ -15,6 +15,7 @@ resource "aws_ebs_volume" "db" {
   availability_zone = var.db_availability_zone
   size              = var.db_volume_size
   type              = var.db_volume_type
+  final_snapshot    = true
 
   lifecycle {
     prevent_destroy = true
