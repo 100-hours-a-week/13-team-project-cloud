@@ -36,7 +36,7 @@ docs/
 | 문서 | 날짜 | 심각도 | 요약 |
 |------|------|--------|------|
 | [SEC-001 DB 유출](incidents/SEC-001-db-credential-leak.md) | 2026-02-02 | Critical | Wiki에 DB 비밀번호 노출 → 크레덴셜 교체 중 7시간 연쇄 장애 |
-| [SEC-002 DoS 대응](incidents/SEC-002-dos-attack-and-security-hardening.md) | 2026-02-04 | High | 초당 54회 POST 공격 → Rate Limiting, Slowloris 방어 구축 |
+| [SEC-002 DoS 대응](incidents/SEC-002-dos-attack-and-security-hardening.md) | 2026-02-04 | High | 초당 54회 POST 공격 → Rate Limiting 구축 |
 | [SEC-002 상세 분석](incidents/SEC-002-dos-analysis.md) | 2026-02-03 | — | 트래픽 패턴 분석, 1차/2차 장애 원인 규명, 개선 전략 도출 |
 | [SEC-003 Safe Browsing](incidents/SEC-003-google-safe-browsing.md) | 2026-02-05 | Medium | SPA catch-all 라우팅이 피싱 오탐 유발 → 경로 차단으로 해결 |
 
@@ -60,5 +60,6 @@ SEC-001 (DB 유출, 7시간 장애)
   └→ DR-003 로그 모니터링 구축 (SEC-001이 계기)
        └→ SEC-002 (DoS 공격, 모니터링이 감지)
             ├→ SEC-002 상세 분석 (트래픽/장애 원인 분석)
+            ├→ OPS-002 Slowloris 방어 (SEC-002 이후 추가 대비)
             └→ SEC-003 (경로 차단이 오탐도 해결)
 ```
