@@ -6,7 +6,7 @@
 | 심각도 | High |
 | 적용 단계 | v1 (Big Bang) |
 | 관련 문서 | [SEC-002 상세 분석](SEC-002-dos-analysis.md), [SEC-001 (DB 유출)](SEC-001-db-credential-leak.md), [DR-003 로그 모니터링 구축](../architecture/DR-003-monitoring-setup.md) |
-| GitHub Issue | #92 |
+| GitHub Issue | [#92](https://github.com/100-hours-a-week/13-team-project-cloud/issues/92) |
 | 주요 목표 | 단일 IP 대량 POST 요청 차단 및 Nginx 레벨 보안 체계 수립 |
 
 ---
