@@ -46,6 +46,8 @@ docs/
 |------|------|------|
 | [OPS-001 Dev/Prod 환경 분리](operations/OPS-001-dev-prod-separation.md) | 2026-02-01 | State 분리, 환경 스왑, EBS 보호, SG 리팩토링 |
 | [OPS-002 Slowloris 방어](operations/OPS-002-slowloris-defense.md) | 2026-02-04 | Connection Timeout 최적화, 커넥션 점유율 82% 감소 |
+| [OPS-003 DB 커넥션 풀 부하 테스트](operations/OPS-003-db-connection-pool-load-test.md) | 2026-02-05 | HikariCP 10→30 증설 검증 → 2 vCPU에서 역효과 확인, 현행 유지 결정 |
+| [OPS-004 DB 마이그레이션 전략](operations/OPS-004-db-migration-strategy.md) | 2026-02-10 | Logical Replication + PgBouncer 기반 PostgreSQL/Redis 무중단 전환 전략 |
 
 ---
 
@@ -61,5 +63,6 @@ SEC-001 (DB 유출, 7시간 장애)
        └→ SEC-002 (DoS 공격, 모니터링이 감지)
             ├→ SEC-002 상세 분석 (트래픽/장애 원인 분석)
             ├→ OPS-002 Slowloris 방어 (SEC-002 이후 추가 대비)
+            ├→ OPS-003 DB 커넥션 풀 부하 테스트 (SEC-002 제안 검증)
             └→ SEC-003 (경로 차단이 오탐도 해결)
 ```

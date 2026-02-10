@@ -6,7 +6,7 @@
 | 심각도 | Critical |
 | 적용 단계 | v1 (Big Bang) |
 | 관련 문서 | [DR-003 로그 모니터링 구축](../architecture/DR-003-monitoring-setup.md), [SEC-002 (DoS 대응)](SEC-002-dos-attack-and-security-hardening.md) |
-| GitHub Issue | #79 |
+| GitHub Issue | [#79](https://github.com/100-hours-a-week/13-team-project-cloud/issues/79) |
 | 주요 목표 | 크레덴셜 유출 경위 파악, 대응 과정 기록, 재발 방지 체계 수립 |
 
 ---
