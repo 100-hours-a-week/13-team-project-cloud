@@ -61,3 +61,5 @@ v1-bigbang/monitoring
 .mcp.json
 
 **/venv
+
+.vscode
