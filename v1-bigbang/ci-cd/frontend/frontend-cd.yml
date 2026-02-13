@@ -1,0 +1,123 @@
+name: FE CD PIPELINE
+run-name: FE CD • ${{ github.event.workflow_run.head_sha }}
+
+on:
+  workflow_run:
+    workflows: ["FE CI PIPELINE"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: fe-cd-${{ github.workflow }}-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  cd:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-24.04-arm
+    environment: ${{ github.event.workflow_run.head_branch == 'main' && 'production' || 'develop' }}
+    env:
+      DEPLOY_PATH: /var/www/html
+      BACKUP_PATH: /var/www/html-backup
+      ROLLBACK_SCRIPT: /home/{{ secrets.EC2_USER }}/scripts/frontend/rollback.sh
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.event.workflow_run.head_sha }}
+          path: dist
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Verify build output
+        run: test -d dist
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "${{ secrets.EC2_KEY_PAIR }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.EC2_ELASTIC_IP }}" >> ~/.ssh/known_hosts
+          echo "SSH_CMD=ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_ELASTIC_IP }}" >> "$GITHUB_ENV"
+
+      - name: Backup current build
+        run: |
+          $SSH_CMD "if [ -d \"$DEPLOY_PATH\" ]; then sudo mkdir -p \"$BACKUP_PATH\" && sudo rsync -az --delete \"$DEPLOY_PATH\"/ \"$BACKUP_PATH\"/; fi"
+          echo "ROLLBACK_ENABLED=true" >> "$GITHUB_ENV"
+
+      - name: Deploy to EC2
+        run: |
+          rsync -az --delete -e "ssh -p ${{ secrets.SSH_PORT }}" dist/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_ELASTIC_IP }}:/tmp/fe-dist-${{ github.event.workflow_run.head_sha }}/
+          $SSH_CMD "sudo rsync -az --delete /tmp/fe-dist-${{ github.event.workflow_run.head_sha }}/ $DEPLOY_PATH/ && sudo rm -rf /tmp/fe-dist-${{ github.event.workflow_run.head_sha }}"
+
+      - name: Health check
+        run: |
+          $SSH_CMD "curl -sf --retry 10 --retry-delay 3 https://${{ secrets.HEALTH_CHECK_URL }}"
+
+      - name: Rollback on failure
+        id: rollback
+        if: (failure() || cancelled()) && env.ROLLBACK_ENABLED == 'true'
+        continue-on-error: true
+        run: |
+          $SSH_CMD "if [ -d \"$BACKUP_PATH\" ]; then sudo rsync -az --delete \"$BACKUP_PATH\"/ \"$DEPLOY_PATH\"/; fi"
+
+      - name: Notify Discord
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          COMMIT_MSG: ${{ github.event.workflow_run.head_commit.message }}
+          AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
+          RUN_NUM: ${{ github.event.workflow_run.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            TITLE="FE 배포 성공"
+            DESC="새로운 버전이 EC2 서버에 정상적으로 배포되었습니다."
+            COLOR=3066993
+          elif [ "${{ job.status }}" = "cancelled" ]; then
+            TITLE="FE 배포 취소"
+            DESC="배포가 취소되었습니다."
+            COLOR=9807270
+          elif [ "${{ steps.rollback.outcome }}" = "success" ]; then
+            TITLE="FE 배포 실패 (롤백 완료)"
+            DESC="배포 실패로 이전 버전으로 롤백되었습니다."
+            COLOR=16753920
+          else
+            TITLE="FE 배포 실패 (롤백 실패)"
+            DESC="롤백에 실패했습니다. 수동 확인이 필요합니다."
+            COLOR=15158332
+          fi
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$DESC" \
+            --arg color "$COLOR" \
+            --arg branch "$BRANCH" \
+            --arg run_num "$RUN_NUM" \
+            --arg author "$AUTHOR" \
+            --arg msg "$COMMIT_MSG" \
+            --arg url "$RUN_URL" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: ($color | tonumber),
+                fields: [
+                  {name: "브랜치", value: $branch, inline: true},
+                  {name: "빌드 번호", value: ("#" + $run_num), inline: true},
+                  {name: "작성자", value: $author, inline: true},
+                  {name: "커밋 메시지", value: $msg, inline: false},
+                  {name: "상세", value: ("[Actions 로그](" + $url + ")"), inline: false}
+                ],
+                footer: {
+                  text: "FE CD",
+                  icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                }
+              }]
+            }' | curl -sf -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-

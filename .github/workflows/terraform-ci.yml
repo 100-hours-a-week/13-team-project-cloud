@@ -53,10 +53,25 @@ jobs:
           script: |
             const fmt = '${{ steps.fmt.outcome }}';
             const val = '${{ steps.validate.outcome }}';
+            const allPass = fmt === 'success' && val === 'success';
             const ok = (s) => s === 'success' ? '✅' : '❌';
 
+            let mood;
+            if (allPass) {
+              const cheers = ['깔끔하네요! 바로 머지 가시죠 🚀', '완벽합니다 👨‍🍳💋', '터짐 없이 통과! 오늘 점심 맛있게 드세요 🍚'];
+              mood = cheers[Math.floor(Math.random() * cheers.length)];
+            } else if (fmt !== 'success' && val === 'success') {
+              const fmtFails = ['어허... 포맷 좀 신경 쓰셔야 할 듯 🙈', 'terraform fmt 한 번만 돌려주세요... 제발요 🥲', '들여쓰기가 춤을 추고 있어요 💃'];
+              mood = fmtFails[Math.floor(Math.random() * fmtFails.length)];
+            } else {
+              const valFails = ['코드가 비명을 지르고 있습니다 🔥', 'validate 실패... 심호흡하고 다시 한번 🧘', '터졌습니다 선생님 💥'];
+              mood = valFails[Math.floor(Math.random() * valFails.length)];
+            }
+
             const body = `<!-- terraform-ci -->
-            ### Terraform CI
+            ### ${allPass ? '✨' : '🚨'} Terraform CI
+
+            > ${mood}
 
             | Step | Result |
             |------|--------|
@@ -102,8 +117,96 @@ jobs:
             --format=json \
             --out-file=/tmp/infracost.json
 
-      - name: Post cost to PR
-        uses: infracost/actions/comment@v1
-        with:
-          path: /tmp/infracost.json
-          behavior: update
+      - name: Notify Discord
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          TOTAL=$(jq -r '.totalMonthlyCost // "0"' /tmp/infracost.json)
+          COUNT=$(jq '[.projects[].breakdown.resources[]] | length' /tmp/infracost.json)
+
+          # 단일 jq로 카테고리별 분류 + embed JSON 생성
+          jq -n --slurpfile data /tmp/infracost.json \
+            --arg total "$TOTAL" \
+            --arg count "$COUNT" \
+            --arg pr_title "$PR_TITLE" \
+            --arg run_url "$RUN_URL" \
+            --arg pr_num "$PR_NUM" '
+
+            # 리소스 추출 (비용 > 0)
+            [$data[0].projects[].breakdown.resources[] |
+              select(.monthlyCost != null and (.monthlyCost | tonumber) > 0)] as $resources |
+
+            # 카테고리 분류
+            def categorize:
+              if (.name | startswith("aws_instance")) then "compute"
+              elif (.name | startswith("aws_nat_gateway")) then "network"
+              elif (.name | startswith("aws_lb")) then "network"
+              elif (.name | startswith("aws_route53")) then "other"
+              elif (.name | startswith("aws_cloudfront")) then "other"
+              else "other"
+              end;
+
+            # 카테고리별 그룹핑
+            (reduce $resources[] as $r (
+              {"compute": [], "network": [], "other": []};
+              .[$r | categorize] += [$r]
+            )) as $groups |
+
+            # 카테고리 소계
+            def cat_total(cat): [$groups[cat][] | .monthlyCost | tonumber] | add // 0 |
+              . * 100 | round / 100;
+
+            # 리소스 상세 포맷
+            def format_resources(cat):
+              [$groups[cat][] |
+                "▸ " + (.name | split(".")[1:] | join(".")) + " — $" + .monthlyCost + "/월\n" +
+                ([
+                  ((.costComponents // [])[], (.subresources // [])[].costComponents[]?) |
+                  select(.monthlyCost != null and (.monthlyCost | tonumber) > 0) |
+                  "  └ " + .name + ": $" + .monthlyCost
+                ] | join("\n"))
+              ] | join("\n\n");
+
+            (cat_total("compute") | tostring) as $ct |
+            (cat_total("network") | tostring) as $nt |
+            (cat_total("other") | tostring) as $ot |
+
+            # 요약 embed
+            {embeds: ([
+              {
+                title: ("💰 월 예상 비용: $" + $total),
+                description: (
+                  "**PR:** " + $pr_title + "\n" +
+                  "**리소스:** " + $count + "개\n" +
+                  "[Actions 로그](" + $run_url + ")\n\n" +
+                  "```\n" +
+                  "Compute       $" + $ct + "\n" +
+                  "Networking    $" + $nt + "\n" +
+                  "기타           $" + $ot + "\n" +
+                  "```"
+                ),
+                color: 3066993
+              }
+            ] + (
+              if ($groups["compute"] | length) > 0 then [{
+                title: ("🖥 Compute — $" + $ct),
+                description: ("```\n" + format_resources("compute") + "\n```"),
+                color: 3447003
+              }] else [] end
+            ) + (
+              if ($groups["network"] | length) > 0 then [{
+                title: ("🌐 Networking — $" + $nt),
+                description: ("```\n" + format_resources("network") + "\n```"),
+                color: 15105570
+              }] else [] end
+            ) + (
+              if ($groups["other"] | length) > 0 then [{
+                title: ("📋 기타 — $" + $ot),
+                description: ("```\n" + format_resources("other") + "\n```"),
+                color: 10070709
+              }] else [] end
+            ))}' | curl -sS -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-

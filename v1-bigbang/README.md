@@ -13,6 +13,10 @@ v1-bigbang/
 ├── monitoring/          PLG Stack (Prometheus, Loki, Grafana) — Docker Compose
 │   ├── dev/
 │   └── prod/
+├── ci/                  GitHub Actions 워크플로우 (각 레포 참조본)
+│   ├── backend/         BE CI/CD (Gradle → JAR → EC2)
+│   ├── frontend/        FE CI/CD (npm → dist → EC2 rsync)
+│   └── ai/              AI CI/CD (ruff/mypy → git pull → systemctl)
 ├── scripts/             프로비저닝 및 배포
 │   ├── init/            서버 초기 패키지 설치
 │   ├── webserver/       Nginx 설정 (dev/prod)
@@ -40,6 +44,7 @@ v1-bigbang/
 
 ## 상세 문서
 
+- CI/CD 파이프라인: [`ci-cd/README.md`](ci-cd/README.md)
 - 웹서버 설정: [`scripts/webserver/README.md`](scripts/webserver/README.md)
 - Exporter: [`scripts/exporters/README.md`](scripts/exporters/README.md)
 - DB 마이그레이션: [`scripts/database/README.md`](scripts/database/README.md)

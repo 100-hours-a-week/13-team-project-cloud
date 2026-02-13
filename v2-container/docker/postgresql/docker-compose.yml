@@ -1,0 +1,52 @@
+# =============================================================================
+# PostgreSQL Server
+# 데이터: /data/postgresql에 영속 저장, config는 postgresql.conf 마운트
+# =============================================================================
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    env_file: .env
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - /data/postgresql:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    command: -config.file=/etc/promtail/config.yml -config.expand-env=true
+    volumes:
+      - ./promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail-positions:/tmp
+    environment:
+      - HOSTNAME=postgresql-v2
+      - ENV=dev
+    restart: unless-stopped
+
+volumes:
+  promtail-positions:

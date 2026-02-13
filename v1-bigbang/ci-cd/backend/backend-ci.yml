@@ -1,0 +1,79 @@
+name: Backend CI PIPELINE
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  checks: write       # 테스트 리포트 작성을 위해 권한 추가 (선택사항)
+  pull-requests: write # PR 코멘트 작성을 위해 (선택사항)
+
+concurrency:
+  group: be-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "21"
+  JAVA_DISTRIBUTION: "temurin"
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK & Cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'gradle' # 내장 캐싱 기능 사용 (코드가 훨씬 간결해짐)
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 최적화: 빌드와 검증을 한 번의 JVM 실행으로 처리 (속도 향상)
+      # check 태스크는 통상적으로 test, checkstyle, spotbugs 등을 모두 포함함
+      # 단, 단계별 실패 원인을 명확히 분리하고 싶다면 기존 방식을 유지하되, 
+      # 여기서는 'Build & Verification'으로 묶어 효율성을 높이는 예시를 보여드림.
+      - name: Build and Verify (Lint, Static Analysis, Test)
+        run: ./gradlew build -x bootJar --no-daemon --parallel
+        # --parallel: 가능한 task를 병렬로 실행하여 속도 향상
+
+      # (선택) GitHub UI에 테스트 결과 시각화
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always() # 실패하더라도 리포트는 보여줌
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+
+      # Push일 때만 실행
+      - name: Build JAR
+        if: github.event_name == 'push'
+        run: ./gradlew bootJar -x test --no-daemon 
+        # 위에서 이미 테스트 했으므로 -x test 유지
+
+      - name: Upload CI Reports
+        if: failure() # 실패했을 때만 로그를 뜯어보면 되므로 failure() 혹은 always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports
+          path: |
+            build/reports/
+          retention-days: 14 # 30일은 너무 김, 14일로 절약
+
+      - name: Upload JAR Artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: |
+            build/libs/*.jar
+            !build/libs/*-plain.jar
+          retention-days: 14

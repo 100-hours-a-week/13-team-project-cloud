@@ -1,0 +1,110 @@
+name: FE PR CI PIPELINE
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - "docs/**"
+      - "**/*.md"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: fe-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-ci:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        id: audit
+        continue-on-error: true # 경고만
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        id: lint
+        run: npm run lint --if-present
+
+      - name: Unit tests
+        id: unit_tests
+        run: npm test --if-present
+
+      - name: Build
+        id: build
+        run: npm run build --if-present
+
+      - name: Prepare PR comment
+        id: pr_comment
+        if: always()
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⚪" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+
+          audit_outcome="${{ steps.audit.outcome }}"
+          lint_outcome="${{ steps.lint.outcome }}"
+          tests_outcome="${{ steps.unit_tests.outcome }}"
+          build_outcome="${{ steps.build.outcome }}"
+
+          audit_icon="$(status_icon "$audit_outcome")"
+          lint_icon="$(status_icon "$lint_outcome")"
+          tests_icon="$(status_icon "$tests_outcome")"
+          build_icon="$(status_icon "$build_outcome")"
+
+          overall="success"
+          for outcome in "$lint_outcome" "$tests_outcome" "$build_outcome"; do
+            if [ "$outcome" = "failure" ] || [ "$outcome" = "cancelled" ]; then
+              overall="failure"
+              break
+            fi
+          done
+
+          if [ "$overall" = "success" ]; then
+            header="✅ **CI 검증 완료!**"
+          else
+            header="❌ **CI 검증 실패**"
+          fi
+
+          {
+            echo "message<<EOF"
+            echo "$header"
+            echo "- Audit: $audit_icon"
+            echo "- Lint: $lint_icon"
+            echo "- Unit tests: $tests_icon"
+            echo "- Build: $build_icon"
+            echo "- 실행 결과: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment CI status
+        if: always()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: ${{ steps.pr_comment.outputs.message }}
+          comment_tag: ci_status

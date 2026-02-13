@@ -1,0 +1,140 @@
+name: FE CI PIPELINE
+
+on:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fe-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04-arm
+    environment: ${{ github.ref_name == 'main' && 'production' || 'develop' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        id: audit
+        continue-on-error: true # 경고만
+        run: |
+          npm audit --audit-level=high 2>&1 | tee audit-results.txt || true
+
+      - name: Lint
+        id: lint
+        run: |
+          npm run lint --if-present 2>&1 | tee lint-results.txt
+
+      - name: Unit tests
+        id: test
+        run: |
+          npm test --if-present 2>&1 | tee test-results.txt
+
+      - name: Build
+        id: build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_KAKAO_MAP_APP_KEY: ${{ secrets.VITE_KAKAO_MAP_APP_KEY }}
+
+        run: npm run build --if-present
+
+      # E2E 테스트 도입 시 활성화
+      # - name: Install Playwright Browsers
+      #   run: npx playwright install --with-deps chromium
+      # - name: Start server
+      #   run: |
+      #     npm run start &
+      #     npx wait-on http://localhost:3000 --timeout 60000
+      # - name: Run E2E tests
+      #   run: npm run test:e2e --if-present
+
+      - name: Upload CI results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fe-ci-results-${{ github.run_number }}
+          path: |
+            audit-results.json
+            lint-results.txt
+            test-results.txt
+          retention-days: 30
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Notify Discord
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_NUM: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            TITLE="FE CI 성공"
+            DESC="코드 검증이 완료되었습니다."
+            COLOR=3066993
+          else
+            TITLE="FE CI 실패"
+            DESC="코드 검증에 실패했습니다. 로그를 확인해주세요."
+            COLOR=15158332
+          fi
+
+          AUDIT="${{ steps.audit.outcome }}"
+          LINT="${{ steps.lint.outcome }}"
+          TEST="${{ steps.test.outcome }}"
+          BUILD="${{ steps.build.outcome }}"
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$DESC" \
+            --arg color "$COLOR" \
+            --arg branch "$BRANCH" \
+            --arg run_num "$RUN_NUM" \
+            --arg audit "$AUDIT" \
+            --arg lint "$LINT" \
+            --arg test "$TEST" \
+            --arg build "$BUILD" \
+            --arg url "$RUN_URL" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: ($color | tonumber),
+                fields: [
+                  {name: "브랜치", value: $branch, inline: true},
+                  {name: "빌드", value: ("#" + $run_num), inline: true},
+                  {name: "Audit", value: $audit, inline: true},
+                  {name: "Lint", value: $lint, inline: true},
+                  {name: "Test", value: $test, inline: true},
+                  {name: "Build", value: $build, inline: true},
+                  {name: "상세", value: ("[Actions 로그](" + $url + ")"), inline: false}
+                ],
+                footer: {
+                  text: "FE CI",
+                  icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                }
+              }]
+            }' | curl -sf -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-
