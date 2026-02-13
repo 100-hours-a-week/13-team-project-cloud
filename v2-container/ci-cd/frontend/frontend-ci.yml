@@ -1,0 +1,21 @@
+name: FE CI PIPELINE
+
+on:
+  push:
+    branches: [develop]
+
+  permissions:
+    contents: read
+
+  concurrency:
+    group: fe-ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+  
+  jobs:
+    ci:
+      runs-on: ubuntu-24.04-arm
+      environment: develop
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
