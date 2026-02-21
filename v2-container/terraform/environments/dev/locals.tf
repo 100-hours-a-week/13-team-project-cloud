@@ -83,6 +83,9 @@ locals {
 
     # CSRF
     CSRF_COOKIE_DOMAIN = { type = "String", description = "CSRF 쿠키 도메인" }
+
+    # AI 추천 서비스
+    AI_RECOMMENDATION_BASE_URL = { type = "String", description = "AI 추천 서비스 베이스 URL" }
   }
 
   # SSM Parameter Store — Recommend (FastAPI) 환경변수

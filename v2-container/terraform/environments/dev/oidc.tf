@@ -5,8 +5,8 @@ resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
   thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1",
-    "1c58a3a8518e8759bf075b76b750d4f2df264fcd",
+    "6938fd4d98bab03faadb97b34396831e3780aea1", # pragma: allowlist secret
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd", # pragma: allowlist secret
   ]
 
   tags = merge(local.common_tags, {
@@ -108,6 +108,39 @@ resource "aws_iam_role_policy" "github_actions_ssm" {
           "ssm:GetCommandInvocation",
         ]
         Resource = "*"
+      }
+    ]
+  })
+}
+
+# =============================================================================
+# Frontend S3 + CloudFront 배포 권한
+# =============================================================================
+resource "aws_iam_role_policy" "github_actions_frontend" {
+  name = "${local.project}-github-actions-frontend"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "S3SyncDeploy"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+        ]
+        Resource = [
+          aws_s3_bucket.frontend.arn,
+          "${aws_s3_bucket.frontend.arn}/*",
+        ]
+      },
+      {
+        Sid    = "CloudFrontInvalidation"
+        Effect = "Allow"
+        Action = "cloudfront:CreateInvalidation"
+        Resource = aws_cloudfront_distribution.frontend.arn
       }
     ]
   })

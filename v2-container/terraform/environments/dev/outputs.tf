@@ -86,3 +86,14 @@ output "ecr_recommend_url" {
 output "github_actions_role_arn" {
   value = aws_iam_role.github_actions.arn
 }
+
+# =============================================================================
+# Frontend
+# =============================================================================
+output "frontend_s3_bucket" {
+  value = aws_s3_bucket.frontend.id
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.frontend.id
+}
