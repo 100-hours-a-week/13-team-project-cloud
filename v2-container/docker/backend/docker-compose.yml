@@ -1,0 +1,47 @@
+# =============================================================================
+# Backend Server (Spring Boot)
+# 배포: ECR에서 이미지 pull → docker compose up -d
+# =============================================================================
+services:
+  app:
+    image: ${ECR_REGISTRY}/moyeobab/backend:${IMAGE_TAG}
+    # [네트워크] host 모드 사용
+    # 이유: Ubuntu 24.04 systemd-resolved + Docker bridge 구조에서
+    #       컨테이너가 VPC DNS(10.1.0.2)에 라우팅 불가 → 내부 도메인 해결 실패
+    # trade-off: 컨테이너 네트워크 격리 없음
+    #            단일 서비스 전용 EC2이므로 격리 실익 없음, VPC SG가 보안 경계 담당
+    # K8s 전환 시: docker-compose 미사용, CoreDNS가 DNS 처리 → 이 설정 그대로 폐기
+    network_mode: host
+    env_file: .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    # [네트워크] host 모드 — loki.internal.dev.moyeobab.com 내부 도메인 해결 필요
+    network_mode: host
+    command: -config.file=/etc/promtail/config.yml -config.expand-env=true
+    volumes:
+      - ./promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail-positions:/tmp
+    environment:
+      - HOSTNAME=backend-v2
+      - ENV=dev
+    restart: unless-stopped
+
+volumes:
+  promtail-positions:
