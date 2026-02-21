@@ -40,7 +40,7 @@ locals {
 
   # GitHub Actions OIDC
   github_org   = "100-hours-a-week"
-  github_repos = ["13-team-project-ai", "13-team-project-be"]
+  github_repos = ["13-team-project-ai", "13-team-project-be", "13-team-project-fe"]
 
   oidc_subjects = flatten([
     for repo in local.github_repos : [
