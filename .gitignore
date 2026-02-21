@@ -25,6 +25,7 @@ keys/
 # k6 test tokens & reports
 v2-container/tests/lib/config.js
 v2-container/tests/**/*.html
+v1-bigbang/tests/reports/*.html
 
 # Config files (nginx, redis 등 로컬 설정)
 *.conf
