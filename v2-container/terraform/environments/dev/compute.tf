@@ -1,11 +1,10 @@
 # =============================================================================
-# API Server (Spring Boot 메인 백엔드)
+# Backend Server (Spring Boot 메인 백엔드)
 # =============================================================================
-resource "aws_instance" "api" {
+resource "aws_instance" "backend" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = aws_subnet.private_app[0].id
-  private_ip             = "10.1.1.235"
   key_name               = var.ec2_key_name
   vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
   iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
@@ -18,8 +17,8 @@ resource "aws_instance" "api" {
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.api, {
-    Name = "${local.project}-${local.environment}-api-v2"
+  tags = merge(local.common_tags, local.service_tags.backend, {
+    Name = "${local.project}-${local.environment}-backend-v2"
   })
 
   lifecycle {
@@ -35,7 +34,6 @@ resource "aws_instance" "recommend" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = aws_subnet.private_app[0].id
-  private_ip             = "10.1.1.196"
   key_name               = var.ec2_key_name
   vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
   iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
@@ -65,9 +63,8 @@ resource "aws_instance" "postgresql" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = aws_subnet.private_data[0].id
-  private_ip             = "10.1.2.202"
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.data.id, aws_security_group.data_monitoring.id]
+  vpc_security_group_ids = [aws_security_group.data.id, aws_security_group.data_monitoring.id, aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
 
   root_block_device {
@@ -95,7 +92,6 @@ resource "aws_instance" "redis" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = aws_subnet.private_data[0].id
-  private_ip             = "10.1.2.240"
   key_name               = var.ec2_key_name
   vpc_security_group_ids = [aws_security_group.data.id, aws_security_group.data_monitoring.id]
   iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name

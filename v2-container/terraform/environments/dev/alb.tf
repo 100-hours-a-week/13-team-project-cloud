@@ -15,9 +15,9 @@ resource "aws_lb" "main" {
 }
 
 # =============================================================================
-# Target Group — API (Spring Boot)
+# Target Group — Backend V2 (Spring Boot)
 # =============================================================================
-resource "aws_lb_target_group" "api" {
+resource "aws_lb_target_group" "backend" {
   # NOTE: name은 ForceNew — 기존 AWS 리소스명 유지 (WAS→api 변경은 재생성 필요)
   name     = "moyeoBab-dev-WAS-v2"
   port     = 8080
@@ -40,9 +40,9 @@ resource "aws_lb_target_group" "api" {
   })
 }
 
-resource "aws_lb_target_group_attachment" "api" {
-  target_group_arn = aws_lb_target_group.api.arn
-  target_id        = aws_instance.api.id
+resource "aws_lb_target_group_attachment" "backend" {
+  target_group_arn = aws_lb_target_group.backend.arn
+  target_id        = aws_instance.backend.id
   port             = 8080
 }
 
@@ -66,7 +66,8 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# HTTPS → Forward to API
+# HTTPS → Weighted Forward (Canary: V1=100, V2=0 기본값)
+# 카나리 방향: V1 100% → V1/V2 50/50 → V2 100% (run-canary.sh가 단계 제어)
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
   port              = 443

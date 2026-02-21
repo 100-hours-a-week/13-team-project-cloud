@@ -12,7 +12,7 @@ locals {
 
   # 서비스별 태그 (Prometheus ec2_sd_configs 연동)
   service_tags = {
-    api = {
+    backend = {
       Tier        = "app"
       Service     = "backend"
       ServicePort = "8080"

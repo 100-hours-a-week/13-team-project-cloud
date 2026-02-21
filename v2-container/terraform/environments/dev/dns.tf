@@ -14,14 +14,6 @@ resource "aws_route53_zone" "internal" {
 }
 
 # Internal DNS records
-resource "aws_route53_record" "internal_api" {
-  zone_id = aws_route53_zone.internal.zone_id
-  name    = "api.internal.dev.moyeobab.com"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.api.private_ip]
-}
-
 resource "aws_route53_record" "internal_recommend" {
   zone_id = aws_route53_zone.internal.zone_id
   name    = "recommend.internal.dev.moyeobab.com"
