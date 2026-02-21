@@ -76,8 +76,21 @@ resource "aws_lb_listener" "https" {
   certificate_arn   = data.aws_acm_certificate.alb.arn
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.backend.arn    # V2
+        weight = 100
+      }
+      target_group {
+        arn    = aws_lb_target_group.backend_v1.arn # V1
+        weight = 0
+      }
+      stickiness {
+        enabled  = false
+        duration = 1
+      }
+    }
   }
 }
 
