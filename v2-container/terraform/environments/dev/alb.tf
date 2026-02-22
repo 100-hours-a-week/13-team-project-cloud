@@ -79,7 +79,7 @@ resource "aws_lb_listener" "https" {
     type = "forward"
     forward {
       target_group {
-        arn    = aws_lb_target_group.backend.arn    # V2
+        arn    = aws_lb_target_group.backend.arn # V2
         weight = 100
       }
       target_group {

@@ -137,9 +137,9 @@ resource "aws_iam_role_policy" "github_actions_frontend" {
         ]
       },
       {
-        Sid    = "CloudFrontInvalidation"
-        Effect = "Allow"
-        Action = "cloudfront:CreateInvalidation"
+        Sid      = "CloudFrontInvalidation"
+        Effect   = "Allow"
+        Action   = "cloudfront:CreateInvalidation"
         Resource = aws_cloudfront_distribution.frontend.arn
       }
     ]
