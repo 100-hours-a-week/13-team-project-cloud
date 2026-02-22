@@ -1,27 +1,15 @@
-name: AI RECOMMEND V2 Manual Deploy
-run-name: AI RECOMMEND V2 Deploy • ${{ inputs.image_tag }} (${{ inputs.action }})
+name: BE V2 수동 배포/롤백
+run-name: BE V2 Manual • ${{ inputs.image_tag || 'latest' }}
 
 on:
   workflow_dispatch:
     inputs:
-      action:
-        description: "배포 액션"
-        required: true
-        type: choice
-        options:
-          - deploy
-          - rollback
       image_tag:
-        description: "이미지 태그 (예: sha-abc1234)"
+        description: "배포할 이미지 태그 (예: sha-abc1234)"
         required: true
-        type: string
 
 permissions:
   id-token: write
-
-concurrency:
-  group: recommend-v2-deploy
-  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -30,30 +18,28 @@ jobs:
     env:
       AWS_REGION: ap-northeast-2
       IMAGE_TAG: ${{ inputs.image_tag }}
-      COMPOSE_DIR: /home/ubuntu/recommend
+      COMPOSE_DIR: /home/ubuntu/backend
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Verify image exists in ECR
-        run: |
-          aws ecr describe-images \
-            --repository-name moyeobab/recommend \
-            --image-ids imageTag=${{ env.IMAGE_TAG }} \
-            --query 'imageDetails[0].imagePushedAt' --output text
-          echo "Image ${{ env.IMAGE_TAG }} confirmed"
+      - name: Sync config to S3
+        run: aws s3 sync docker/ s3://moyeobab-dev-config/backend/ --delete
 
       - name: Deploy via SSM Send Command
         id: ssm-deploy
         run: |
           COMMAND_ID=$(aws ssm send-command \
-            --targets "Key=tag:Service,Values=recommend" "Key=tag:Environment,Values=dev" \
+            --targets "Key=tag:Service,Values=backend" "Key=tag:Environment,Values=dev" \
             --document-name "AWS-RunShellScript" \
-            --comment "${{ inputs.action }} recommend ${{ env.IMAGE_TAG }}" \
+            --comment "Manual deploy backend ${{ env.IMAGE_TAG }}" \
             --timeout-seconds 300 \
             --max-concurrency "1" \
             --max-errors "0" \
@@ -63,14 +49,18 @@ jobs:
               "IMAGE_TAG='"${{ env.IMAGE_TAG }}"'",
               "COMPOSE_DIR='"${{ env.COMPOSE_DIR }}"'",
               "",
+              "# S3에서 배포 설정 파일 동기화",
+              "mkdir -p ${COMPOSE_DIR}",
+              "aws s3 sync s3://moyeobab-dev-config/backend/ ${COMPOSE_DIR}/ --exclude '.env' --region ${REGION}",
+              "",
               "# ECR login",
               "ECR_REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${REGION}.amazonaws.com",
               "aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               "",
               "# Parameter Store → .env",
               "> ${COMPOSE_DIR}/.env",
-              "for param in PG_HOST PG_PORT PG_USER PG_PASSWORD PG_DB; do",
-              "  val=$(aws ssm get-parameter --name /moyeobab/recommend/dev/${param} --with-decryption --query \"Parameter.Value\" --output text --region ${REGION})",
+              "for param in DB_URL DB_USERNAME DB_PASSWORD REDIS_HOST REDIS_PORT REDIS_PASSWORD JWT_SECRET JWT_ISSUER JWT_ACCESS_TOKEN_EXPIRE_MINUTES JWT_COOKIE_NAME JWT_COOKIE_SAME_SITE JWT_COOKIE_SECURE JWT_REFRESH_COOKIE_NAME JWT_REFRESH_TOKEN_EXPIRE_DAYS KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET KAKAO_ADMIN_KEY KAKAO_REDIRECT_URI KAKAO_FRONTEND_REDIRECT_URL KAKAO_UNLINK_URL CSRF_COOKIE_DOMAIN AI_RECOMMENDATION_BASE_URL; do",
+              "  val=$(aws ssm get-parameter --name /moyeobab/spring/dev/${param} --with-decryption --query \"Parameter.Value\" --output text --region ${REGION})",
               "  echo \"${param}=${val}\" >> ${COMPOSE_DIR}/.env",
               "done",
               "echo \"ECR_REGISTRY=${ECR_REGISTRY}\" >> ${COMPOSE_DIR}/.env",
@@ -80,15 +70,10 @@ jobs:
               "cd ${COMPOSE_DIR} && docker compose pull && docker compose up -d",
               "",
               "# Health check",
-              "sleep 5",
-              "if curl -sf --retry 8 --retry-delay 3 http://localhost:8000/health; then",
-              "  echo \"Health check passed\"",
-              "  docker image prune -f",
-              "  exit 0",
-              "fi",
-              "",
-              "echo \"Health check failed\"",
-              "exit 1"
+              "sleep 15",
+              "curl -sf --retry 10 --retry-delay 5 http://localhost:8080/actuator/health",
+              "echo \"Health check passed\"",
+              "docker image prune -f"
             ]' \
             --query "Command.CommandId" --output text)
 
@@ -145,37 +130,26 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            TITLE="AI Recommend V2 수동 ${{ inputs.action }} 성공"
-            DESC="\`${{ env.IMAGE_TAG }}\` ${{ inputs.action }} 완료"
+            TITLE="BE V2 수동 배포 성공"
             COLOR=3066993
           else
-            TITLE="AI Recommend V2 수동 ${{ inputs.action }} 실패"
-            DESC="\`${{ env.IMAGE_TAG }}\` ${{ inputs.action }} 실패"
+            TITLE="BE V2 수동 배포 실패"
             COLOR=15158332
           fi
 
           jq -n \
             --arg title "$TITLE" \
-            --arg desc "$DESC" \
             --arg color "$COLOR" \
-            --arg actor "${{ github.actor }}" \
             --arg tag "${{ env.IMAGE_TAG }}" \
-            --arg action "${{ inputs.action }}" \
             --arg url "$RUN_URL" \
             '{
               embeds: [{
                 title: $title,
-                description: $desc,
                 color: ($color | tonumber),
                 fields: [
-                  {name: "실행자", value: $actor, inline: true},
-                  {name: "액션", value: $action, inline: true},
                   {name: "이미지 태그", value: ("`" + $tag + "`"), inline: true},
                   {name: "상세", value: ("[Actions 로그](" + $url + ")"), inline: false}
                 ],
-                footer: {
-                  text: "AI Recommend V2 Manual Deploy",
-                  icon_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                }
+                footer: {text: "BE V2 Manual Deploy"}
               }]
             }' | curl -sf -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-

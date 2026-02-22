@@ -12,7 +12,7 @@ locals {
 
   # 서비스별 태그 (Prometheus ec2_sd_configs 연동)
   service_tags = {
-    api = {
+    backend = {
       Tier        = "app"
       Service     = "backend"
       ServicePort = "8080"
@@ -40,7 +40,7 @@ locals {
 
   # GitHub Actions OIDC
   github_org   = "100-hours-a-week"
-  github_repos = ["13-team-project-ai", "13-team-project-be"]
+  github_repos = ["13-team-project-ai", "13-team-project-be", "13-team-project-fe"]
 
   oidc_subjects = flatten([
     for repo in local.github_repos : [
@@ -83,6 +83,9 @@ locals {
 
     # CSRF
     CSRF_COOKIE_DOMAIN = { type = "String", description = "CSRF 쿠키 도메인" }
+
+    # AI 추천 서비스
+    AI_RECOMMENDATION_BASE_URL = { type = "String", description = "AI 추천 서비스 베이스 URL" }
   }
 
   # SSM Parameter Store — Recommend (FastAPI) 환경변수

@@ -2,10 +2,10 @@
 # S3 Bucket (Frontend SPA)
 # =============================================================================
 resource "aws_s3_bucket" "frontend" {
-  bucket = "dev.moyeobab.com"
+  bucket = "moyeobab-dev-frontend"
 
   tags = merge(local.common_tags, {
-    Name = "dev.moyeobab.com"
+    Name = "moyeobab-dev-frontend"
   })
 
   lifecycle {

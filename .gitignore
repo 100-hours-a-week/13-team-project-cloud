@@ -1,63 +1,50 @@
-# Local .terraform directories
+# Terraform
 .terraform/
-
-# .tfstate files
 *.tfstate
 *.tfstate.*
-
-# Crash log files
-crash.log
-crash.*.log
-
-# tfvars - 검토 완료, 시크릿 없음 (AMI ID, CIDR, 인스턴스 설정만 포함)
-# *.tfvars
+.terraform.tfstate.lock.info
+# *.tfvars (인프라 메타데이터 공유를 위해 허용, 내용은 pre-commit으로 검사)
 *.tfvars.json
-
-# Ignore override files as they are usually used to override resources locally and so
-# are not checked in
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-
-# Ignore transient lock info files created by terraform apply
-.terraform.tfstate.lock.info
-
-# Include override files you do wish to add to version control using negated pattern
-# !example_override.tf
-
-# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-# example: *tfplan*
-
-# Ignore CLI configuration files
+crash.log
+crash.*.log
 .terraformrc
 terraform.rc
 
 # Sensitive files
 *.pem
 *.csv
-keys
+keys/
+.env
+.env.*
+!.env.example
 
-# Documentation
+# k6 test tokens & reports
+v2-container/tests/lib/config.js
+v2-container/tests/**/*.html
+v1-bigbang/tests/reports/*.html
+
+# Config files (nginx, redis 등 로컬 설정)
+*.conf
+
+# Monitoring (v1 로컬 설정)
+v1-bigbang/monitoring/
+
+# Data & Cache
+data/
+**/venv
+
+# Plan documents (로컬 계획서)
+plan/
+
+# Legacy directories
 docs-gguip1
 docs-rough
-
-# Claude
-.claude
-
-# .conf files
-*.conf
-
-data/
-
 ci_cd/
 
-.env
-
-*.conf
-
-v1-bigbang/monitoring
-
+# Claude / MCP
+.claude
 .mcp.json
-
-**/venv

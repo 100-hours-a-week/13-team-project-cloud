@@ -1,0 +1,107 @@
+name: FE V2 수동 배포/롤백
+run-name: FE V2 Manual • ${{ inputs.commit_sha || 'latest' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "배포할 커밋 SHA (빈칸=최신 develop)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm
+    environment: develop
+    env:
+      AWS_REGION: ap-northeast-2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha || 'develop' }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_KAKAO_MAP_APP_KEY: ${{ secrets.VITE_KAKAO_MAP_APP_KEY }}
+        run: npm ci && npm run build
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          aws s3 sync dist/ "s3://${S3_BUCKET}" \
+            --delete \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --exclude "*" --include "*.html"
+
+          aws s3 sync dist/ "s3://${S3_BUCKET}" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html"
+
+      - name: Invalidate CloudFront cache
+        env:
+          CF_DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${CF_DISTRIBUTION_ID}" \
+            --paths "/*"
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf --retry 5 --retry-delay 3 "https://dev.moyeobab.com" > /dev/null
+          echo "Health check passed"
+
+      - name: Notify Discord
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          COMMIT="${{ inputs.commit_sha || 'develop (latest)' }}"
+          if [ "${{ job.status }}" = "success" ]; then
+            TITLE="FE V2 수동 배포 성공"
+            COLOR=3066993
+          else
+            TITLE="FE V2 수동 배포 실패"
+            COLOR=15158332
+          fi
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg color "$COLOR" \
+            --arg commit "$COMMIT" \
+            --arg url "$RUN_URL" \
+            '{
+              embeds: [{
+                title: $title,
+                color: ($color | tonumber),
+                fields: [
+                  {name: "대상 커밋", value: ("`" + $commit + "`"), inline: true},
+                  {name: "상세", value: ("[Actions 로그](" + $url + ")"), inline: false}
+                ],
+                footer: {text: "FE V2 Manual Deploy"}
+              }]
+            }' | curl -sf -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-

@@ -1,0 +1,128 @@
+# =============================================================================
+# Prometheus Configuration — ec2_sd_configs 기반 서비스 디스커버리
+#
+# EC2 인스턴스 태그로 자동 scrape target 구성:
+#   Version=v2, ManagedBy=terraform → v2 인스턴스만 필터
+#   Service → job label (backend, recommend, postgresql, redis)
+#   ServicePort → scrape 포트
+#   MetricsPath → metrics 경로
+#   Environment → 환경 구분 (prod, dev)
+#
+# NOTE: ec2_sd_configs는 IAM ec2:DescribeInstances 권한 필요
+#       (prod-monitoring EC2 IAM Role에 포함)
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ----- 자체 모니터링 -----
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+  # ----- Node Exporter (모든 v2 인스턴스) -----
+  - job_name: 'node-exporter'
+    ec2_sd_configs:
+      - region: ap-northeast-2
+        port: 9100
+        filters:
+          - name: "tag:Version"
+            values: ["v2"]
+          - name: "tag:ManagedBy"
+            values: ["terraform"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_instance_state]
+        regex: running
+        action: keep
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Service]
+        target_label: service
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+      - source_labels: [__meta_ec2_tag_Tier]
+        target_label: tier
+
+  # ----- Backend (Spring Boot Actuator) -----
+  - job_name: 'backend-service'
+    metrics_path: '/actuator/prometheus'
+    ec2_sd_configs:
+      - region: ap-northeast-2
+        port: 8080
+        filters:
+          - name: "tag:Version"
+            values: ["v2"]
+          - name: "tag:Service"
+            values: ["backend"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_instance_state]
+        regex: running
+        action: keep
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+
+  # ----- Recommend (FastAPI /metrics) -----
+  - job_name: 'recommend-service'
+    metrics_path: '/metrics'
+    ec2_sd_configs:
+      - region: ap-northeast-2
+        port: 8000
+        filters:
+          - name: "tag:Version"
+            values: ["v2"]
+          - name: "tag:Service"
+            values: ["recommend"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_instance_state]
+        regex: running
+        action: keep
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+
+  # ----- PostgreSQL Exporter -----
+  - job_name: 'postgres-exporter'
+    ec2_sd_configs:
+      - region: ap-northeast-2
+        port: 9187
+        filters:
+          - name: "tag:Version"
+            values: ["v2"]
+          - name: "tag:Service"
+            values: ["postgresql"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_instance_state]
+        regex: running
+        action: keep
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+
+  # ----- Redis Exporter -----
+  - job_name: 'redis-exporter'
+    ec2_sd_configs:
+      - region: ap-northeast-2
+        port: 9121
+        filters:
+          - name: "tag:Version"
+            values: ["v2"]
+          - name: "tag:Service"
+            values: ["redis"]
+    relabel_configs:
+      - source_labels: [__meta_ec2_instance_state]
+        regex: running
+        action: keep
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment

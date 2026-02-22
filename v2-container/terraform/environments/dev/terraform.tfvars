@@ -10,4 +10,3 @@ ec2_ami_id        = "ami-0fa652388f45f21b5"
 ec2_instance_type = "t4g.small"
 ec2_key_name      = "tasteCompass-key"
 
-v1_loki_ip = "10.1.0.251"
