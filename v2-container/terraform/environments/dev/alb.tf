@@ -104,7 +104,7 @@ resource "aws_lb_listener_rule" "block_actuator" {
 
   condition {
     path_pattern {
-      values = ["/actuator/*"]
+      values = ["/actuator", "/actuator/*"]
     }
   }
 

@@ -46,5 +46,5 @@ variable "ec2_key_name" {
 variable "enable_path_blocking" {
   description = "ALB에서 /actuator, /swagger 경로 차단"
   type        = bool
-  default     = false
+  default     = true
 }
