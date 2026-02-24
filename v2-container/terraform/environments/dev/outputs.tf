@@ -31,8 +31,12 @@ output "alb_zone_id" {
 # =============================================================================
 # Instances
 # =============================================================================
-output "backend_private_ip" {
-  value = aws_instance.backend.private_ip
+output "backend_1_private_ip" {
+  value = aws_instance.backend_1.private_ip
+}
+
+output "backend_2_private_ip" {
+  value = aws_instance.backend_2.private_ip
 }
 
 output "recommend_private_ip" {

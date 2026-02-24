@@ -2,7 +2,6 @@
 # Application Load Balancer
 # =============================================================================
 resource "aws_lb" "main" {
-  # NOTE: name은 ForceNew — 기존 AWS 리소스명 그대로 유지 (대소문자 주의)
   name               = "moyeoBab-dev-ALB-v2"
   internal           = false
   load_balancer_type = "application"
@@ -40,9 +39,15 @@ resource "aws_lb_target_group" "backend" {
   })
 }
 
-resource "aws_lb_target_group_attachment" "backend" {
+resource "aws_lb_target_group_attachment" "backend_1" {
   target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = aws_instance.backend.id
+  target_id        = aws_instance.backend_1.id
+  port             = 8080
+}
+
+resource "aws_lb_target_group_attachment" "backend_2" {
+  target_group_arn = aws_lb_target_group.backend.arn
+  target_id        = aws_instance.backend_2.id
   port             = 8080
 }
 
@@ -104,7 +109,7 @@ resource "aws_lb_listener_rule" "block_actuator" {
 
   condition {
     path_pattern {
-      values = ["/actuator/*"]
+      values = ["/actuator", "/actuator/*"]
     }
   }
 

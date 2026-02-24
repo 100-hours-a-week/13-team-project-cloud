@@ -48,6 +48,9 @@ docs/
 | [OPS-002 Slowloris 방어](operations/OPS-002-slowloris-defense.md) | 2026-02-04 | Connection Timeout 최적화, 커넥션 점유율 82% 감소 |
 | [OPS-003 DB 커넥션 풀 부하 테스트](operations/OPS-003-db-connection-pool-load-test.md) | 2026-02-05 | HikariCP 10→30 증설 검증 → 2 vCPU에서 역효과 확인, 현행 유지 결정 |
 | [OPS-004 DB 마이그레이션 전략](operations/OPS-004-db-migration-strategy.md) | 2026-02-10 | Logical Replication + PgBouncer 기반 PostgreSQL/Redis 무중단 전환 전략 |
+| [OPS-005 Prod DB 마이그레이션 실행](operations/OPS-005-db-migration-execution.md) | 2026-02-23 | PostgreSQL v1→v2 Logical Replication + PgBouncer 실행, k6 10,000건 유실 0건 검증, Grafana 증거 12장 |
+| [OPS-006 V1→V2 카나리 마이그레이션 실행](operations/OPS-006-canary-migration-execution.md) | 2026-02-20 | EC2 직설치→Docker 무중단 카나리 전환. Route53 DNS 캐시 실패 → ALB Weighted TG 전환, k6 50VU checks 100%/에러 0% |
+| [OPS-007 Redis v1→v2 마이그레이션 실행](operations/OPS-007-redis-migration-execution.md) | 2026-02-23 | Cold Cutover + REPLICAOF. AUTH 토큰 미반영 500 현장 수정, k6 refresh_401_rate 0% (세션 유실 0건) |
 
 ---
 
@@ -65,4 +68,15 @@ SEC-001 (DB 유출, 7시간 장애)
             ├→ OPS-002 Slowloris 방어 (SEC-002 이후 추가 대비)
             ├→ OPS-003 DB 커넥션 풀 부하 테스트 (SEC-002 제안 검증)
             └→ SEC-003 (경로 차단이 오탐도 해결)
+
+OPS-003 (DB 커넥션 풀 테스트, PgBouncer 불필요 근거)
+  └→ OPS-005 Prod DB 마이그레이션 실행 (PgBouncer 임시 사용 후 제거)
+
+OPS-004 (DB 마이그레이션 전략 — Logical Replication + PgBouncer 설계)
+  ├→ OPS-005 Prod DB 마이그레이션 실행 (PostgreSQL 실행)
+  └→ OPS-006 V1→V2 카나리 마이그레이션 실행 (ALB 트래픽 전환)
+
+OPS-006 (ALB 카나리 전환 — Route53 실패 → ALB 성공)
+  ├→ OPS-005 Prod DB 마이그레이션 실행 (카나리 검증 후 DB 전환 진행)
+  └→ OPS-007 Redis 마이그레이션 실행 (카나리 전환 완료 후 Redis 이관)
 ```

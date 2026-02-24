@@ -1,7 +1,7 @@
 # =============================================================================
-# Backend Server (Spring Boot 메인 백엔드)
+# Backend Server 1 (Spring Boot 메인 백엔드)
 # =============================================================================
-resource "aws_instance" "backend" {
+resource "aws_instance" "backend_1" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = aws_subnet.private_app[0].id
@@ -18,12 +18,40 @@ resource "aws_instance" "backend" {
   }
 
   tags = merge(local.common_tags, local.service_tags.backend, {
-    Name = "${local.project}-${local.environment}-backend-v2"
+    Name = "${local.project}-${local.environment}-backend-v2-1"
   })
 
   lifecycle {
     prevent_destroy = true
     ignore_changes  = [ami]
+  }
+}
+
+# =============================================================================
+# Backend Server 2 (Spring Boot 스케일아웃)
+# =============================================================================
+resource "aws_instance" "backend_2" {
+  ami                    = var.ec2_ami_id
+  instance_type          = var.ec2_instance_type
+  subnet_id              = aws_subnet.private_app[0].id
+  key_name               = var.ec2_key_name
+  vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
+  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+
+  root_block_device {
+    volume_size           = 20
+    volume_type           = "gp3"
+    iops                  = 3000
+    throughput            = 125
+    delete_on_termination = false
+  }
+
+  tags = merge(local.common_tags, local.service_tags.backend, {
+    Name = "${local.project}-${local.environment}-backend-v2-2"
+  })
+
+  lifecycle {
+    ignore_changes = [ami]
   }
 }
 

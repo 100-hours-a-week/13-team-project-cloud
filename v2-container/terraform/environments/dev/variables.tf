@@ -46,5 +46,10 @@ variable "ec2_key_name" {
 variable "enable_path_blocking" {
   description = "ALB에서 /actuator, /swagger 경로 차단"
   type        = bool
-  default     = false
+  default     = true
+}
+
+variable "monitoring_vpc_peering_id" {
+  description = "Monitoring VPC Peering Connection ID"
+  type        = string
 }
