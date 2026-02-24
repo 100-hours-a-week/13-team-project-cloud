@@ -10,3 +10,5 @@ ec2_ami_id        = "ami-0fa652388f45f21b5"
 ec2_instance_type = "t4g.small"
 ec2_key_name      = "tasteCompass-key"
 
+monitoring_vpc_peering_id = "pcx-0fd722e5877d95009"
+

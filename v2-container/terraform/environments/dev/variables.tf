@@ -48,3 +48,8 @@ variable "enable_path_blocking" {
   type        = bool
   default     = true
 }
+
+variable "monitoring_vpc_peering_id" {
+  description = "Monitoring VPC Peering Connection ID"
+  type        = string
+}
