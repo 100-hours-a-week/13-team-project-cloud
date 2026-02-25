@@ -43,7 +43,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role_policy" "v2_ec2_parameter_store" {
   name = "${local.project}-v2-ec2-parameter-store"
-  role = aws_iam_role.v2_ec2.id
+  role = module.compute.ec2_role_id
 
   policy = jsonencode({
     Version = "2012-10-17"

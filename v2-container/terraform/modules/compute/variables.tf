@@ -1,0 +1,14 @@
+variable "project"               { type = string }
+variable "environment"           { type = string }
+variable "app_version"           { type = string }
+variable "common_tags"           { type = map(string) }
+variable "service_tags"          { type = map(map(string)) }
+variable "ec2_ami_id"            { type = string }
+variable "ec2_instance_type"     { type = string }
+variable "ec2_key_name"          { type = string }
+variable "private_app_subnet_id"  { type = string }
+variable "private_data_subnet_id" { type = string }
+variable "app_sg_id"             { type = string }
+variable "app_monitoring_sg_id"  { type = string }
+variable "data_sg_id"            { type = string }
+variable "data_monitoring_sg_id" { type = string }

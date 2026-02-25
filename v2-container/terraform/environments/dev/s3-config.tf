@@ -19,7 +19,7 @@ resource "aws_s3_bucket_versioning" "config" {
 # EC2 인스턴스가 config 파일을 다운로드할 수 있도록
 resource "aws_iam_role_policy" "v2_ec2_config_s3" {
   name = "${local.project}-v2-ec2-config-s3"
-  role = aws_iam_role.v2_ec2.id
+  role = module.compute.ec2_role_id
 
   policy = jsonencode({
     Version = "2012-10-17"

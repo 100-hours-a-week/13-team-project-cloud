@@ -2,53 +2,53 @@
 # Network
 # =============================================================================
 output "vpc_id" {
-  value = aws_vpc.main.id
+  value = module.network.vpc_id
 }
 
 output "public_subnet_ids" {
-  value = aws_subnet.public[*].id
+  value = module.network.public_subnet_ids
 }
 
 output "private_app_subnet_ids" {
-  value = aws_subnet.private_app[*].id
+  value = module.network.private_app_subnet_ids
 }
 
 output "private_data_subnet_ids" {
-  value = aws_subnet.private_data[*].id
+  value = module.network.private_data_subnet_ids
 }
 
 # =============================================================================
 # ALB
 # =============================================================================
 output "alb_dns_name" {
-  value = aws_lb.main.dns_name
+  value = module.alb.alb_dns_name
 }
 
 output "alb_zone_id" {
-  value = aws_lb.main.zone_id
+  value = module.alb.alb_zone_id
 }
 
 # =============================================================================
 # Instances
 # =============================================================================
 output "backend_1_private_ip" {
-  value = aws_instance.backend_1.private_ip
+  value = module.compute.backend_1_private_ip
 }
 
 output "backend_2_private_ip" {
-  value = aws_instance.backend_2.private_ip
+  value = module.compute.backend_2_private_ip
 }
 
 output "recommend_private_ip" {
-  value = aws_instance.recommend.private_ip
+  value = module.compute.recommend_private_ip
 }
 
 output "postgresql_private_ip" {
-  value = aws_instance.postgresql.private_ip
+  value = module.compute.postgresql_private_ip
 }
 
 output "redis_private_ip" {
-  value = aws_instance.redis.private_ip
+  value = module.compute.redis_private_ip
 }
 
 # =============================================================================
@@ -59,29 +59,29 @@ output "internal_zone_id" {
 }
 
 output "cloudfront_domain_name" {
-  value = aws_cloudfront_distribution.frontend.domain_name
+  value = module.frontend.cloudfront_domain
 }
 
 # =============================================================================
-# Security Groups (v1 monitoring 연동 시 참조)
+# Security Groups
 # =============================================================================
 output "app_sg_id" {
-  value = aws_security_group.app.id
+  value = module.security.app_sg_id
 }
 
 output "data_sg_id" {
-  value = aws_security_group.data.id
+  value = module.security.data_sg_id
 }
 
 # =============================================================================
 # ECR
 # =============================================================================
 output "ecr_backend_url" {
-  value = aws_ecr_repository.backend.repository_url
+  value = module.ecr.backend_repo_url
 }
 
 output "ecr_recommend_url" {
-  value = aws_ecr_repository.recommend.repository_url
+  value = module.ecr.recommend_repo_url
 }
 
 # =============================================================================
@@ -95,9 +95,9 @@ output "github_actions_role_arn" {
 # Frontend
 # =============================================================================
 output "frontend_s3_bucket" {
-  value = aws_s3_bucket.frontend.id
+  value = module.frontend.s3_bucket_name
 }
 
 output "cloudfront_distribution_id" {
-  value = aws_cloudfront_distribution.frontend.id
+  value = module.frontend.cloudfront_id
 }

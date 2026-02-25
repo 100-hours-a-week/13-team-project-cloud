@@ -73,8 +73,8 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:GetDownloadUrlForLayer",
         ]
         Resource = [
-          aws_ecr_repository.backend.arn,
-          aws_ecr_repository.recommend.arn,
+          module.ecr.backend_repo_arn,
+          module.ecr.recommend_repo_arn,
         ]
       }
     ]
@@ -132,15 +132,15 @@ resource "aws_iam_role_policy" "github_actions_frontend" {
           "s3:ListBucket",
         ]
         Resource = [
-          aws_s3_bucket.frontend.arn,
-          "${aws_s3_bucket.frontend.arn}/*",
+          module.frontend.s3_bucket_arn,
+          "${module.frontend.s3_bucket_arn}/*",
         ]
       },
       {
         Sid      = "CloudFrontInvalidation"
         Effect   = "Allow"
         Action   = "cloudfront:CreateInvalidation"
-        Resource = aws_cloudfront_distribution.frontend.arn
+        Resource = module.frontend.cloudfront_arn
       }
     ]
   })
