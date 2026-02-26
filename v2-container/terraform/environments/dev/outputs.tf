@@ -88,7 +88,7 @@ output "ecr_recommend_url" {
 # OIDC
 # =============================================================================
 output "github_actions_role_arn" {
-  value = aws_iam_role.github_actions.arn
+  value = module.github_actions.role_arn
 }
 
 # =============================================================================
@@ -100,4 +100,15 @@ output "frontend_s3_bucket" {
 
 output "cloudfront_distribution_id" {
   value = module.frontend.cloudfront_id
+}
+
+# =============================================================================
+# Receipt S3
+# =============================================================================
+output "receipt_s3_bucket" {
+  value = module.receipt_s3.bucket_name
+}
+
+output "receipt_s3_bucket_arn" {
+  value = module.receipt_s3.bucket_arn
 }

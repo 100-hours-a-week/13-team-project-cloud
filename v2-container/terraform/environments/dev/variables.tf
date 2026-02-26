@@ -53,3 +53,8 @@ variable "monitoring_vpc_peering_id" {
   description = "Monitoring VPC Peering Connection ID"
   type        = string
 }
+
+variable "price_class" {
+  description = "CloudFront Price Class"
+  type        = string
+}

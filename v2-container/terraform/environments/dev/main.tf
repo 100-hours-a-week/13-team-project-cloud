@@ -40,6 +40,7 @@ module "compute" {
   app_monitoring_sg_id   = module.security.app_monitoring_sg_id
   data_sg_id             = module.security.data_sg_id
   data_monitoring_sg_id  = module.security.data_monitoring_sg_id
+  postgresql_extra_sg_ids = [module.security.app_sg_id]
 }
 
 module "alb" {
@@ -62,6 +63,7 @@ module "ecr" {
   source = "../../modules/ecr"
 
   project     = local.project
+  environment = local.environment
   common_tags = local.common_tags
 }
 
@@ -74,4 +76,62 @@ module "frontend" {
   region              = var.region
   acm_certificate_arn = data.aws_acm_certificate.cloudfront.arn
   domain_alias        = "dev.moyeobab.com"
+  price_class         = var.price_class
+}
+
+module "config_s3" {
+  source = "../../modules/config_s3"
+
+  project     = local.project
+  environment = local.environment
+  common_tags = local.common_tags
+  ec2_role_id = module.compute.ec2_role_id
+}
+
+module "receipt_s3" {
+  source = "../../modules/receipt_s3"
+
+  project     = local.project
+  environment = local.environment
+  common_tags = local.common_tags
+  ec2_role_id = module.compute.ec2_role_id
+}
+
+module "parameter_store" {
+  source = "../../modules/parameter-store"
+
+  project                   = local.project
+  environment               = local.environment
+  common_tags               = local.common_tags
+  region                    = var.region
+  account_id                = data.aws_caller_identity.current.account_id
+  ec2_role_id               = module.compute.ec2_role_id
+  ssm_prefix                = local.ssm_prefix
+  ssm_recommend_prefix      = local.ssm_recommend_prefix
+  ssm_parameters            = local.ssm_parameters
+  ssm_recommend_parameters  = local.ssm_recommend_parameters
+}
+
+module "github_actions" {
+  source = "../../modules/github_actions"
+
+  project     = local.project
+  environment = local.environment
+  common_tags = local.common_tags
+
+  oidc_provider_arn      = data.aws_iam_openid_connect_provider.github.arn
+  oidc_subjects          = local.oidc_subjects
+
+  ecr_backend_arn        = module.ecr.backend_repo_arn
+  ecr_recommend_arn      = module.ecr.recommend_repo_arn
+
+  frontend_s3_bucket_arn  = module.frontend.s3_bucket_arn
+  frontend_cloudfront_arn = module.frontend.cloudfront_arn
+
+  config_s3_bucket_arn   = module.config_s3.bucket_arn
+  receipt_s3_bucket_arn  = module.receipt_s3.bucket_arn
+  enable_receipt_s3      = true
+
+  region                 = var.region
+  account_id             = data.aws_caller_identity.current.account_id
 }
