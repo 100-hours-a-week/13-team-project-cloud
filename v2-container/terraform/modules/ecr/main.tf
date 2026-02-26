@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "backend" {
-  name                 = "${var.project}/backend"
+  name                 = "${var.project}/${var.environment}/backend"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -11,7 +11,7 @@ resource "aws_ecr_repository" "backend" {
   }
 
   tags = merge(var.common_tags, {
-    Name    = "${var.project}/backend"
+    Name    = "${var.project}/${var.environment}/backend"
     Service = "backend"
   })
 
@@ -21,7 +21,7 @@ resource "aws_ecr_repository" "backend" {
 }
 
 resource "aws_ecr_repository" "recommend" {
-  name                 = "${var.project}/recommend"
+  name                 = "${var.project}/${var.environment}/recommend"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -33,7 +33,7 @@ resource "aws_ecr_repository" "recommend" {
   }
 
   tags = merge(var.common_tags, {
-    Name    = "${var.project}/recommend"
+    Name    = "${var.project}/${var.environment}/recommend"
     Service = "recommend"
   })
 

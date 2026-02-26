@@ -42,7 +42,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
   aliases             = [var.domain_alias]
-  price_class         = "PriceClass_200"
+  price_class         = var.price_class
   http_version        = "http2"
 
   origin {

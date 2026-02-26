@@ -112,9 +112,12 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.main[count.index].id
   }
 
-  route {
-    cidr_block                = "10.0.0.0/16"
-    vpc_peering_connection_id = var.monitoring_vpc_peering_id
+  dynamic "route" {
+    for_each = var.monitoring_vpc_peering_id != "" ? [1] : []
+    content {
+      cidr_block                = var.monitoring_vpc_cidr
+      vpc_peering_connection_id = var.monitoring_vpc_peering_id
+    }
   }
 
   tags = merge(var.common_tags, {

@@ -7,4 +7,12 @@ variable "availability_zones"        { type = list(string) }
 variable "public_subnet_cidrs"       { type = list(string) }
 variable "private_app_subnet_cidrs"  { type = list(string) }
 variable "private_data_subnet_cidrs" { type = list(string) }
-variable "monitoring_vpc_peering_id" { type = string }
+variable "monitoring_vpc_peering_id" {
+  type    = string
+  default = ""
+}
+
+variable "monitoring_vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
