@@ -92,6 +92,15 @@ resource "aws_iam_role_policy" "ssm" {
           "ssm:GetCommandInvocation",
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "SSMPutImageTag"
+        Effect = "Allow"
+        Action = "ssm:PutParameter"
+        Resource = [
+          "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/spring/${var.environment}/IMAGE_TAG",
+          "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/recommend/${var.environment}/IMAGE_TAG",
+        ]
       }
     ]
   })
