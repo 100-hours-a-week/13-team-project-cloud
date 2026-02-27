@@ -27,7 +27,7 @@ data "aws_route_table" "dev_private" {
 
 # dev compute IAM instance profile 참조 (현재 monitoring 인스턴스가 사용 중)
 data "aws_iam_instance_profile" "dev_ec2" {
-  name = "moyeobab-v2-ec2-profile"
+  name = "moyeobab-v2-dev-ec2-profile"
 }
 
 # =============================================================================
