@@ -43,12 +43,12 @@ output "recommend_private_ip" {
   value = module.compute.recommend_private_ip
 }
 
-output "postgresql_private_ip" {
-  value = module.compute.postgresql_private_ip
+output "postgresql_private_ips" {
+  value = module.compute.postgresql_private_ips
 }
 
-output "redis_private_ip" {
-  value = module.compute.redis_private_ip
+output "redis_private_ips" {
+  value = module.compute.redis_private_ips
 }
 
 # =============================================================================

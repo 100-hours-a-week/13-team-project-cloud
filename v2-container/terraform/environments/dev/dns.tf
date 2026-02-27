@@ -27,7 +27,7 @@ resource "aws_route53_record" "internal_postgresql" {
   name    = "db.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [module.compute.postgresql_private_ip]
+  records = [module.compute.postgresql_private_ips["primary"]]
 }
 
 resource "aws_route53_record" "internal_redis" {
@@ -35,7 +35,7 @@ resource "aws_route53_record" "internal_redis" {
   name    = "redis.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [module.compute.redis_private_ip]
+  records = [module.compute.redis_private_ips["primary"]]
 }
 
 # =============================================================================

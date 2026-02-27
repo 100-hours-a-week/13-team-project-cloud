@@ -86,6 +86,9 @@ locals {
 
     # AI 추천 서비스
     AI_RECOMMENDATION_BASE_URL = { type = "String", description = "AI 추천 서비스 베이스 URL" }
+
+    # 배포 이미지 태그 (CD workflow에서 관리)
+    IMAGE_TAG = { type = "String", description = "현재 배포된 Docker 이미지 태그" }
   }
 
   # SSM Parameter Store — Recommend (FastAPI) 환경변수
@@ -97,5 +100,8 @@ locals {
     PG_USER     = { type = "String", description = "PostgreSQL 사용자명" }
     PG_PASSWORD = { type = "SecureString", description = "PostgreSQL 비밀번호" }
     PG_DB       = { type = "String", description = "PostgreSQL 데이터베이스명" }
+
+    # 배포 이미지 태그 (CD workflow에서 관리)
+    IMAGE_TAG = { type = "String", description = "현재 배포된 Docker 이미지 태그" }
   }
 }

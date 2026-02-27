@@ -35,12 +35,23 @@ module "compute" {
   ec2_instance_type      = var.ec2_instance_type
   ec2_key_name           = var.ec2_key_name
   private_app_subnet_id  = module.network.private_app_subnet_ids[0]
-  private_data_subnet_id = module.network.private_data_subnet_ids[0]
   app_sg_id              = module.security.app_sg_id
   app_monitoring_sg_id   = module.security.app_monitoring_sg_id
   data_sg_id             = module.security.data_sg_id
   data_monitoring_sg_id  = module.security.data_monitoring_sg_id
-  postgresql_extra_sg_ids = [module.security.app_sg_id]
+
+  postgresql_instances = {
+    primary = {
+      subnet_id    = module.network.private_data_subnet_ids[0]
+      extra_sg_ids = [module.security.app_sg_id]
+    }
+  }
+
+  redis_instances = {
+    primary = {
+      subnet_id = module.network.private_data_subnet_ids[0]
+    }
+  }
 }
 
 module "alb" {
