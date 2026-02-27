@@ -91,6 +91,14 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
+  dynamic "route" {
+    for_each = var.monitoring_vpc_peering_id != "" ? [1] : []
+    content {
+      cidr_block                = var.monitoring_vpc_cidr
+      vpc_peering_connection_id = var.monitoring_vpc_peering_id
+    }
+  }
+
   tags = merge(var.common_tags, {
     Name = "${var.project}-${var.environment}-${var.app_version}-public-rt"
   })
