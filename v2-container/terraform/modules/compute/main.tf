@@ -1,7 +1,10 @@
 # =============================================================================
 # Backend Server 1 (Spring Boot 메인 백엔드)
+# NOTE: ASG 사용 시 enable_backend = false로 비활성화
 # =============================================================================
 resource "aws_instance" "backend_1" {
+  count = var.enable_backend ? 1 : 0
+
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
   subnet_id              = var.private_app_subnet_id
@@ -32,7 +35,7 @@ resource "aws_instance" "backend_1" {
 # Backend Server 2 (조건부 — enable_backend_2 = true일 때만 생성)
 # =============================================================================
 resource "aws_instance" "backend_2" {
-  count = var.enable_backend_2 ? 1 : 0
+  count = var.enable_backend && var.enable_backend_2 ? 1 : 0
 
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
@@ -90,19 +93,21 @@ resource "aws_instance" "recommend" {
 }
 
 # =============================================================================
-# PostgreSQL Server
+# PostgreSQL Servers
 # =============================================================================
 resource "aws_instance" "postgresql" {
+  for_each = var.postgresql_instances
+
   ami                    = var.ec2_ami_id
-  instance_type          = var.ec2_instance_type
-  subnet_id              = var.private_data_subnet_id
-  private_ip             = var.postgresql_private_ip
+  instance_type          = coalesce(each.value.instance_type, var.ec2_instance_type)
+  subnet_id              = each.value.subnet_id
+  private_ip             = each.value.private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = compact(concat([var.data_sg_id, var.data_monitoring_sg_id], var.postgresql_extra_sg_ids))
+  vpc_security_group_ids = compact(concat([var.data_sg_id, var.data_monitoring_sg_id], each.value.extra_sg_ids))
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
-    volume_size           = 50
+    volume_size           = each.value.volume_size
     volume_type           = "gp3"
     iops                  = 3000
     throughput            = 125
@@ -110,7 +115,7 @@ resource "aws_instance" "postgresql" {
   }
 
   tags = merge(var.common_tags, var.service_tags.postgresql, {
-    Name = "${var.project}-${var.environment}-${var.app_version}-postgresql"
+    Name = "${var.project}-${var.environment}-${var.app_version}-postgresql-${each.key}"
   })
 
   lifecycle {
@@ -120,19 +125,21 @@ resource "aws_instance" "postgresql" {
 }
 
 # =============================================================================
-# Redis Server
+# Redis Servers
 # =============================================================================
 resource "aws_instance" "redis" {
+  for_each = var.redis_instances
+
   ami                    = var.ec2_ami_id
-  instance_type          = var.ec2_instance_type
-  subnet_id              = var.private_data_subnet_id
-  private_ip             = var.redis_private_ip
+  instance_type          = coalesce(each.value.instance_type, var.ec2_instance_type)
+  subnet_id              = each.value.subnet_id
+  private_ip             = each.value.private_ip
   key_name               = var.ec2_key_name
   vpc_security_group_ids = compact([var.data_sg_id, var.data_monitoring_sg_id])
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
-    volume_size           = 20
+    volume_size           = each.value.volume_size
     volume_type           = "gp3"
     iops                  = 3000
     throughput            = 125
@@ -140,7 +147,7 @@ resource "aws_instance" "redis" {
   }
 
   tags = merge(var.common_tags, var.service_tags.redis, {
-    Name = "${var.project}-${var.environment}-${var.app_version}-redis"
+    Name = "${var.project}-${var.environment}-${var.app_version}-redis-${each.key}"
   })
 
   lifecycle {

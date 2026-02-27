@@ -7,7 +7,6 @@ variable "ec2_ami_id"            { type = string }
 variable "ec2_instance_type"     { type = string }
 variable "ec2_key_name"          { type = string }
 variable "private_app_subnet_id"  { type = string }
-variable "private_data_subnet_id" { type = string }
 variable "app_sg_id"             { type = string }
 variable "data_sg_id"            { type = string }
 
@@ -21,6 +20,12 @@ variable "data_monitoring_sg_id" {
   description = "Data tier monitoring SG ID (빈 문자열이면 미적용)"
   type        = string
   default     = ""
+}
+
+variable "enable_backend" {
+  description = "백엔드 EC2 인스턴스 생성 여부 (ASG 사용 시 false)"
+  type        = bool
+  default     = true
 }
 
 variable "enable_backend_2" {
@@ -41,20 +46,23 @@ variable "recommend_private_ip" {
   default     = null
 }
 
-variable "postgresql_private_ip" {
-  description = "PostgreSQL 고정 Private IP (null이면 자동 할당)"
-  type        = string
-  default     = null
+variable "postgresql_instances" {
+  description = "PostgreSQL 인스턴스 맵 (key = 인스턴스 이름, e.g. primary, standby)"
+  type = map(object({
+    subnet_id     = string
+    private_ip    = optional(string)
+    instance_type = optional(string)
+    volume_size   = optional(number, 50)
+    extra_sg_ids  = optional(list(string), [])
+  }))
 }
 
-variable "redis_private_ip" {
-  description = "Redis 고정 Private IP (null이면 자동 할당)"
-  type        = string
-  default     = null
-}
-
-variable "postgresql_extra_sg_ids" {
-  description = "PostgreSQL에 추가할 Security Group ID 목록"
-  type        = list(string)
-  default     = []
+variable "redis_instances" {
+  description = "Redis 인스턴스 맵 (key = 인스턴스 이름, e.g. primary, replica)"
+  type = map(object({
+    subnet_id     = string
+    private_ip    = optional(string)
+    instance_type = optional(string)
+    volume_size   = optional(number, 20)
+  }))
 }
