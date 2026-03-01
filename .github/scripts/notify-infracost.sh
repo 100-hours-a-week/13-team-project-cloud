@@ -68,7 +68,7 @@ jq -n \
         "```"
       ),
       color: ($color | tonumber),
-      footer: { text: "Infracost · terraform/environments/" + $env }
+      footer: { text: ("Infracost · terraform/environments/" + $env) }
     }]
   }
 ' | curl -sS -X POST "$WEBHOOK" \
