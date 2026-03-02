@@ -6,8 +6,14 @@ variable "service_name" { type = string }
 variable "service_tags" { type = map(string) }
 
 variable "ami_id"                { type = string }
-variable "instance_type"         { type = string }
-variable "key_name"              { type = string }
+variable "instance_type" {
+  type    = string
+  default = "t4g.small"
+}
+variable "key_name" {
+  type    = string
+  default = "tasteCompass-key"
+}
 variable "instance_profile_name" { type = string }
 variable "security_group_ids"    { type = list(string) }
 

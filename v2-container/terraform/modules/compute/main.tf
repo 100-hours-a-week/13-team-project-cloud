@@ -103,7 +103,7 @@ resource "aws_instance" "postgresql" {
   subnet_id              = each.value.subnet_id
   private_ip             = each.value.private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = compact(concat([var.data_sg_id, var.data_monitoring_sg_id], each.value.extra_sg_ids))
+  vpc_security_group_ids = compact([var.data_sg_id, var.data_monitoring_sg_id])
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
