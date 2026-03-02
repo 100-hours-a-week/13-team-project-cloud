@@ -62,9 +62,83 @@ module "alb" {
   public_subnet_ids    = module.network.public_subnet_ids
   alb_sg_id            = module.security.alb_sg_id
   acm_certificate_arn  = data.aws_acm_certificate.alb.arn
-  backend_1_id         = module.compute.backend_1_id
-  backend_2_id         = module.compute.backend_2_id
   enable_path_blocking = var.enable_path_blocking
+}
+
+# =============================================================================
+# ASG — Backend (Auto Scaling Group)
+# NOTE: target group attachment는 ASG가 자동 관리
+# =============================================================================
+module "backend_asg" {
+  source = "../../modules/asg"
+
+  project      = local.project
+  environment  = local.environment
+  app_version  = local.version
+  common_tags  = local.common_tags
+  service_name = "backend"
+  service_tags = {
+    Tier        = "app"
+    Service     = "backend"
+    ServicePort = "8080"
+    MetricsPath = "/actuator/prometheus"
+  }
+
+  ami_id                = var.ec2_ami_id
+  instance_profile_name = module.compute.ec2_instance_profile_name
+  security_group_ids    = compact([module.security.app_sg_id, module.security.app_monitoring_sg_id])
+
+  subnet_ids        = module.network.private_app_subnet_ids
+  target_group_arns = [module.alb.target_group_arn]
+
+  user_data = templatefile("${path.module}/../../../scripts/user-data/backend-user-data.sh", {
+    deploy_env = local.environment
+  })
+
+  min_size         = 1
+  max_size         = 2
+  desired_capacity = 1
+
+  health_check_type         = "ELB"
+  health_check_grace_period = 300
+  default_instance_warmup   = 300
+}
+
+# =============================================================================
+# ASG — Recommend (Auto Scaling Group, desired=1)
+# NOTE: target_group_arns 없음 (internal DNS로 접근), EC2 health check
+# =============================================================================
+module "asg_recommend" {
+  source = "../../modules/asg"
+
+  project      = local.project
+  environment  = local.environment
+  app_version  = local.version
+  common_tags  = local.common_tags
+  service_name = "recommend"
+  service_tags = {
+    Tier        = "app"
+    Service     = "recommend"
+    ServicePort = "8000"
+    MetricsPath = "/metrics"
+  }
+
+  ami_id                = var.ec2_ami_id
+  instance_profile_name = module.compute.ec2_instance_profile_name
+  security_group_ids    = compact([module.security.app_sg_id, module.security.app_monitoring_sg_id])
+
+  subnet_ids = [module.network.private_app_subnet_ids[0]]
+
+  user_data = templatefile("${path.module}/../../../scripts/user-data/recommend-user-data.sh", {
+    deploy_env = local.environment
+  })
+
+  min_size         = 1
+  max_size         = 1
+  desired_capacity = 1
+
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
 }
 
 module "ecr" {

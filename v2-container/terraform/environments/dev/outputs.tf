@@ -29,18 +29,18 @@ output "alb_zone_id" {
 }
 
 # =============================================================================
-# Instances
+# Instances / ASG
 # =============================================================================
-output "backend_1_private_ip" {
-  value = module.compute.backend_1_private_ip
+output "backend_asg_name" {
+  value = module.backend_asg.asg_name
 }
 
-output "backend_2_private_ip" {
-  value = module.compute.backend_2_private_ip
+output "recommend_asg_name" {
+  value = module.asg_recommend.asg_name
 }
 
 output "recommend_private_ip" {
-  value = module.compute.recommend_private_ip
+  value = length(data.aws_instances.recommend.private_ips) > 0 ? data.aws_instances.recommend.private_ips[0] : null
 }
 
 output "postgresql_private_ips" {

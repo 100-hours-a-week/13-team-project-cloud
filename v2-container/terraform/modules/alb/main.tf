@@ -34,17 +34,7 @@ resource "aws_lb_target_group" "backend" {
   })
 }
 
-resource "aws_lb_target_group_attachment" "backend_1" {
-  target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = var.backend_1_id
-  port             = 8080
-}
-
-resource "aws_lb_target_group_attachment" "backend_2" {
-  target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = var.backend_2_id
-  port             = 8080
-}
+# NOTE: target group attachment는 ASG가 자동 관리 (module.asg_backend)
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn

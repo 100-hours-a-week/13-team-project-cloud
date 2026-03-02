@@ -5,18 +5,6 @@ variable "common_tags"           { type = map(string) }
 variable "service_tags" {
   type = map(map(string))
   default = {
-    backend = {
-      Tier        = "app"
-      Service     = "backend"
-      ServicePort = "8080"
-      MetricsPath = "/actuator/prometheus"
-    }
-    recommend = {
-      Tier        = "app"
-      Service     = "recommend"
-      ServicePort = "8000"
-      MetricsPath = "/metrics"
-    }
     postgresql = {
       Tier        = "data"
       Service     = "postgresql"
@@ -54,30 +42,6 @@ variable "data_monitoring_sg_id" {
   description = "Data tier monitoring SG ID (빈 문자열이면 미적용)"
   type        = string
   default     = ""
-}
-
-variable "enable_backend" {
-  description = "백엔드 EC2 인스턴스 생성 여부 (ASG 사용 시 false)"
-  type        = bool
-  default     = true
-}
-
-variable "enable_backend_2" {
-  description = "두 번째 백엔드 인스턴스 생성 여부"
-  type        = bool
-  default     = true
-}
-
-variable "backend_private_ip" {
-  description = "Backend 고정 Private IP (null이면 자동 할당)"
-  type        = string
-  default     = null
-}
-
-variable "recommend_private_ip" {
-  description = "Recommend 고정 Private IP (null이면 자동 할당)"
-  type        = string
-  default     = null
 }
 
 variable "postgresql_instances" {

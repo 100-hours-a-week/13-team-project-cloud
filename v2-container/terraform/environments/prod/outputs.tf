@@ -35,8 +35,12 @@ output "backend_asg_name" {
   value = module.asg_backend.asg_name
 }
 
+output "recommend_asg_name" {
+  value = module.asg_recommend.asg_name
+}
+
 output "recommend_private_ip" {
-  value = module.compute.recommend_private_ip
+  value = length(data.aws_instances.recommend.private_ips) > 0 ? data.aws_instances.recommend.private_ips[0] : null
 }
 
 output "postgresql_private_ips" {

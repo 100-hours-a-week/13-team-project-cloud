@@ -39,13 +39,6 @@ module "compute" {
   app_monitoring_sg_id  = var.monitoring_sg_id != "" ? aws_security_group.app_monitoring[0].id : ""
   data_monitoring_sg_id = var.monitoring_sg_id != "" ? aws_security_group.data_monitoring[0].id : ""
 
-  # prod 백엔드는 ASG로 대체
-  enable_backend   = false
-  enable_backend_2 = false
-
-  # 고정 Private IP (recommend)
-  recommend_private_ip = "10.0.1.20"
-
   postgresql_instances = {
     primary = {
       subnet_id  = module.network.private_data_subnet_ids[0]
@@ -98,13 +91,56 @@ module "asg_backend" {
   subnet_ids        = module.network.private_app_subnet_ids
   target_group_arns = [aws_lb_target_group.backend.arn]
 
-  user_data = file("${path.module}/../../../scripts/user-data/backend-user-data.sh")
+  user_data = templatefile("${path.module}/../../../scripts/user-data/backend-user-data.sh", {
+    deploy_env = local.environment
+  })
 
   min_size         = 2
   max_size         = 2
   desired_capacity = 2
 
   health_check_type         = "ELB"
+  health_check_grace_period = 300
+}
+
+# =============================================================================
+# ASG — Recommend (Auto Scaling Group, desired=1)
+# NOTE: target_group_arns 없음 (internal ALB 미적용), EC2 health check
+# =============================================================================
+module "asg_recommend" {
+  source = "../../modules/asg"
+
+  project      = local.project
+  environment  = local.environment
+  app_version  = local.version
+  common_tags  = local.common_tags
+  service_name = "recommend"
+  service_tags = {
+    Tier        = "app"
+    Service     = "recommend"
+    ServicePort = "8000"
+    MetricsPath = "/metrics"
+  }
+
+  ami_id = var.ec2_ami_id
+  instance_profile_name = module.compute.ec2_instance_profile_name
+
+  security_group_ids = compact([
+    aws_security_group.app.id,
+    var.monitoring_sg_id != "" ? aws_security_group.app_monitoring[0].id : "",
+  ])
+
+  subnet_ids = [module.network.private_app_subnet_ids[0]]
+
+  user_data = templatefile("${path.module}/../../../scripts/user-data/recommend-user-data.sh", {
+    deploy_env = local.environment
+  })
+
+  min_size         = 1
+  max_size         = 1
+  desired_capacity = 1
+
+  health_check_type         = "EC2"
   health_check_grace_period = 300
 }
 

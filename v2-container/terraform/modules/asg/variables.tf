@@ -17,6 +17,12 @@ variable "key_name" {
 variable "instance_profile_name" { type = string }
 variable "security_group_ids"    { type = list(string) }
 
+variable "private_ip_address" {
+  description = "Launch Template 고정 Private IP (null이면 자동 할당)"
+  type        = string
+  default     = null
+}
+
 variable "user_data" {
   description = "User data script (plain text, base64 인코딩은 모듈 내부에서 처리)"
   type        = string

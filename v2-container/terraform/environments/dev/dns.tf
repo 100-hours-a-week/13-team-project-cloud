@@ -19,7 +19,7 @@ resource "aws_route53_record" "internal_recommend" {
   name    = "recommend.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [module.compute.recommend_private_ip]
+  records = data.aws_instances.recommend.private_ips
 }
 
 resource "aws_route53_record" "internal_postgresql" {
