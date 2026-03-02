@@ -21,22 +21,18 @@ output "private_data_subnet_ids" {
 # ALB
 # =============================================================================
 output "alb_dns_name" {
-  value = module.alb.alb_dns_name
+  value = aws_lb.main.dns_name
 }
 
 output "alb_zone_id" {
-  value = module.alb.alb_zone_id
+  value = aws_lb.main.zone_id
 }
 
 # =============================================================================
-# Instances
+# Instances / ASG
 # =============================================================================
-output "backend_1_private_ip" {
-  value = module.compute.backend_1_private_ip
-}
-
-output "backend_2_private_ip" {
-  value = module.compute.backend_2_private_ip
+output "backend_asg_name" {
+  value = module.asg_backend.asg_name
 }
 
 output "recommend_private_ip" {
@@ -63,14 +59,14 @@ output "cloudfront_domain_name" {
 }
 
 # =============================================================================
-# Security Groups
+# Security Groups (monitoring 연동 시 참조)
 # =============================================================================
 output "app_sg_id" {
-  value = module.security.app_sg_id
+  value = aws_security_group.app.id
 }
 
 output "data_sg_id" {
-  value = module.security.data_sg_id
+  value = aws_security_group.data.id
 }
 
 # =============================================================================

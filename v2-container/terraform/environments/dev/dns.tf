@@ -5,7 +5,7 @@ resource "aws_route53_zone" "internal" {
   name = "internal.dev.moyeobab.com"
 
   vpc {
-    vpc_id = aws_vpc.main.id
+    vpc_id = module.network.vpc_id
   }
 
   tags = merge(local.common_tags, {
@@ -19,7 +19,7 @@ resource "aws_route53_record" "internal_recommend" {
   name    = "recommend.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [aws_instance.recommend.private_ip]
+  records = [module.compute.recommend_private_ip]
 }
 
 resource "aws_route53_record" "internal_postgresql" {
@@ -27,7 +27,7 @@ resource "aws_route53_record" "internal_postgresql" {
   name    = "db.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [aws_instance.postgresql.private_ip]
+  records = [module.compute.postgresql_private_ips["primary"]]
 }
 
 resource "aws_route53_record" "internal_redis" {
@@ -35,7 +35,7 @@ resource "aws_route53_record" "internal_redis" {
   name    = "redis.internal.dev.moyeobab.com"
   type    = "A"
   ttl     = 300
-  records = [aws_instance.redis.private_ip]
+  records = [module.compute.redis_private_ips["primary"]]
 }
 
 # =============================================================================
@@ -49,8 +49,8 @@ resource "aws_route53_record" "frontend" {
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.frontend.domain_name
-    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    name                   = module.frontend.cloudfront_domain
+    zone_id                = module.frontend.cloudfront_hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -64,8 +64,8 @@ resource "aws_route53_record" "api_v2" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.main.dns_name
-    zone_id                = aws_lb.main.zone_id
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
     evaluate_target_health = true
   }
 }

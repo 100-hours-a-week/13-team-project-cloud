@@ -1,11 +1,9 @@
-# =============================================================================
-# S3 Bucket (Frontend SPA)
-# =============================================================================
 resource "aws_s3_bucket" "frontend" {
-  bucket = "moyeobab-dev-frontend"
+  # NOTE: bucket name은 ForceNew — 기존 AWS 리소스명 유지
+  bucket = "${var.project}-${var.environment}-frontend"
 
-  tags = merge(local.common_tags, {
-    Name = "moyeobab-dev-frontend"
+  tags = merge(var.common_tags, {
+    Name = "${var.project}-${var.environment}-frontend"
   })
 
   lifecycle {
@@ -33,11 +31,8 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 }
 
-# =============================================================================
-# CloudFront Distribution
-# =============================================================================
 resource "aws_cloudfront_origin_access_control" "frontend" {
-  name                              = "${local.project}-${local.environment}-frontend-oac"
+  name                              = "${var.project}-${var.environment}-frontend-oac"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -46,8 +41,8 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
-  aliases             = ["dev.moyeobab.com"]
-  price_class         = "PriceClass_All"
+  aliases             = [var.domain_alias]
+  price_class         = var.price_class
   http_version        = "http2"
 
   origin {
@@ -65,7 +60,6 @@ resource "aws_cloudfront_distribution" "frontend" {
     cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
   }
 
-  # SPA routing: 403 → /index.html
   custom_error_response {
     error_code            = 403
     response_code         = 200
@@ -74,7 +68,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = data.aws_acm_certificate.cloudfront.arn
+    acm_certificate_arn      = var.acm_certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
@@ -85,7 +79,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
-  tags = merge(local.common_tags, {
-    Name = "${local.project}-${local.environment}-frontend-cdn"
+  tags = merge(var.common_tags, {
+    Name = "${var.project}-${var.environment}-frontend-cdn"
   })
 }

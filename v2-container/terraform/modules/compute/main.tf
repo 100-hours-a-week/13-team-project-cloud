@@ -1,13 +1,17 @@
 # =============================================================================
 # Backend Server 1 (Spring Boot 메인 백엔드)
+# NOTE: ASG 사용 시 enable_backend = false로 비활성화
 # =============================================================================
 resource "aws_instance" "backend_1" {
+  count = var.enable_backend ? 1 : 0
+
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.private_app[0].id
+  subnet_id              = var.private_app_subnet_id
+  private_ip             = var.backend_private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
-  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+  vpc_security_group_ids = compact([var.app_sg_id, var.app_monitoring_sg_id])
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
     volume_size           = 20
@@ -17,8 +21,8 @@ resource "aws_instance" "backend_1" {
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.backend, {
-    Name = "${local.project}-${local.environment}-backend-v2-1"
+  tags = merge(var.common_tags, var.service_tags.backend, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-backend-1"
   })
 
   lifecycle {
@@ -28,15 +32,17 @@ resource "aws_instance" "backend_1" {
 }
 
 # =============================================================================
-# Backend Server 2 (Spring Boot 스케일아웃)
+# Backend Server 2 (조건부 — enable_backend_2 = true일 때만 생성)
 # =============================================================================
 resource "aws_instance" "backend_2" {
+  count = var.enable_backend && var.enable_backend_2 ? 1 : 0
+
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.private_app[0].id
+  subnet_id              = var.private_app_subnet_id
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
-  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+  vpc_security_group_ids = compact([var.app_sg_id, var.app_monitoring_sg_id])
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
     volume_size           = 20
@@ -46,12 +52,13 @@ resource "aws_instance" "backend_2" {
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.backend, {
-    Name = "${local.project}-${local.environment}-backend-v2-2"
+  tags = merge(var.common_tags, var.service_tags.backend, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-backend-2"
   })
 
   lifecycle {
-    ignore_changes = [ami]
+    prevent_destroy = true
+    ignore_changes  = [ami]
   }
 }
 
@@ -61,10 +68,11 @@ resource "aws_instance" "backend_2" {
 resource "aws_instance" "recommend" {
   ami                    = var.ec2_ami_id
   instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.private_app[0].id
+  subnet_id              = var.private_app_subnet_id
+  private_ip             = var.recommend_private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.app.id, aws_security_group.app_monitoring.id]
-  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+  vpc_security_group_ids = compact([var.app_sg_id, var.app_monitoring_sg_id])
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
     volume_size           = 20
@@ -74,8 +82,8 @@ resource "aws_instance" "recommend" {
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.recommend, {
-    Name = "${local.project}-${local.environment}-recommend-v2"
+  tags = merge(var.common_tags, var.service_tags.recommend, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-recommend"
   })
 
   lifecycle {
@@ -85,26 +93,29 @@ resource "aws_instance" "recommend" {
 }
 
 # =============================================================================
-# PostgreSQL Server
+# PostgreSQL Servers
 # =============================================================================
 resource "aws_instance" "postgresql" {
+  for_each = var.postgresql_instances
+
   ami                    = var.ec2_ami_id
-  instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.private_data[0].id
+  instance_type          = coalesce(each.value.instance_type, var.ec2_instance_type)
+  subnet_id              = each.value.subnet_id
+  private_ip             = each.value.private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.data.id, aws_security_group.data_monitoring.id, aws_security_group.app.id]
-  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+  vpc_security_group_ids = compact(concat([var.data_sg_id, var.data_monitoring_sg_id], each.value.extra_sg_ids))
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
-    volume_size           = 50
+    volume_size           = each.value.volume_size
     volume_type           = "gp3"
     iops                  = 3000
     throughput            = 125
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.postgresql, {
-    Name = "${local.project}-${local.environment}-postgresql-v2"
+  tags = merge(var.common_tags, var.service_tags.postgresql, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-postgresql-${each.key}"
   })
 
   lifecycle {
@@ -114,26 +125,29 @@ resource "aws_instance" "postgresql" {
 }
 
 # =============================================================================
-# Redis Server
+# Redis Servers
 # =============================================================================
 resource "aws_instance" "redis" {
+  for_each = var.redis_instances
+
   ami                    = var.ec2_ami_id
-  instance_type          = var.ec2_instance_type
-  subnet_id              = aws_subnet.private_data[0].id
+  instance_type          = coalesce(each.value.instance_type, var.ec2_instance_type)
+  subnet_id              = each.value.subnet_id
+  private_ip             = each.value.private_ip
   key_name               = var.ec2_key_name
-  vpc_security_group_ids = [aws_security_group.data.id, aws_security_group.data_monitoring.id]
-  iam_instance_profile   = aws_iam_instance_profile.v2_ec2.name
+  vpc_security_group_ids = compact([var.data_sg_id, var.data_monitoring_sg_id])
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
-    volume_size           = 20
+    volume_size           = each.value.volume_size
     volume_type           = "gp3"
     iops                  = 3000
     throughput            = 125
     delete_on_termination = false
   }
 
-  tags = merge(local.common_tags, local.service_tags.redis, {
-    Name = "${local.project}-${local.environment}-redis-v2"
+  tags = merge(var.common_tags, var.service_tags.redis, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-redis-${each.key}"
   })
 
   lifecycle {
@@ -143,36 +157,34 @@ resource "aws_instance" "redis" {
 }
 
 # =============================================================================
-# IAM Role (통합 — SSM + ECR pull)
+# IAM Role (SSM + ECR pull)
 # =============================================================================
-resource "aws_iam_role" "v2_ec2" {
-  name = "${local.project}-v2-ec2-role"
+resource "aws_iam_role" "ec2" {
+  name = "${var.project}-${var.app_version}-${var.environment}-ec2-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
 
-  tags = local.common_tags
+  tags = var.common_tags
 }
 
-resource "aws_iam_role_policy_attachment" "v2_ec2_ssm" {
-  role       = aws_iam_role.v2_ec2.name
+resource "aws_iam_role_policy_attachment" "ec2_ssm" {
+  role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-resource "aws_iam_role_policy_attachment" "v2_ec2_ecr" {
-  role       = aws_iam_role.v2_ec2.name
+resource "aws_iam_role_policy_attachment" "ec2_ecr" {
+  role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-resource "aws_iam_instance_profile" "v2_ec2" {
-  name = "${local.project}-v2-ec2-profile"
-  role = aws_iam_role.v2_ec2.name
+resource "aws_iam_instance_profile" "ec2" {
+  name = "${var.project}-${var.app_version}-${var.environment}-ec2-profile"
+  role = aws_iam_role.ec2.name
 }

@@ -242,48 +242,49 @@ v2 Redis의 `requirepass` 값을 앱의 `.env`(`REDIS_PASSWORD`)에 반영하지
 
 k6는 `/refresh`를 능동적으로 반복 호출해 401 여부를 모니터링했다. 이는 **서버 관점**의 데이터 유실 검증이다. 하지만 실제 사용자는 `/refresh`를 능동적으로 호출하지 않는다.
 
-### 프론트엔드 인터셉터 동작 (`src/shared/lib/api.ts`)
+### 프론트엔드 인터셉터 동작 (`src/shared/lib/api.ts`, `AuthProvider.tsx`)
 
 ```typescript
-// 401/403 응답 시에만 /refresh 시도
+// API 호출 → 401 시 /refresh 시도
 if ((response.status === 401 || response.status === 403) && !options.skipRefresh) {
-  const refreshed = await refreshSession()
-  if (refreshed) return request<T>(...)  // 성공 시 원래 요청 재시도
-  // refreshSession()이 false(503 포함) → 원래 에러 throw
+  const refreshed = await refreshSession()  // /refresh 503 → false 반환
+  if (refreshed) return request<T>(...)
+  // false → 원래 401 에러 throw
 }
-```
 
-```typescript
-// AuthProvider: 401/403 전파 시 → 로그아웃
+// AuthProvider: 401 전파 → setMember(null) → UI 로그아웃
 if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
   setMember(null)
 }
 ```
 
-`/refresh`가 503을 반환해도 인터셉터는 이를 **에러로 처리하고 종료**한다. 503 자체가 로그아웃 트리거가 되지는 않는다.
-
-### 실제 로그아웃 발생 조건
-
-503 차단 60초 구간 동안 사용자가 로그아웃되려면 **세 조건이 동시에** 충족되어야 한다:
+### 실제 로그아웃 발생 조건 (실험으로 확인)
 
 ```
-1. 사용자의 access token이 60초 차단 구간 내에 만료
-       ↓
-2. 만료된 상태로 API 호출 → 서버가 401 반환
-       ↓
-3. 인터셉터가 /refresh 시도 → ALB 503 (차단 중)
-       ↓
-4. refreshSession() → false → setMember(null) → 로그아웃
+[차단 구간 중, access token 만료 상태에서 API 호출]
+
+API 호출 → 401
+  → 인터셉터: /refresh 시도 → 503 (차단)
+  → refreshSession() = false → 원래 401 throw
+  → AuthProvider catch → setMember(null) → 로그아웃
+
+[차단 해제 후 페이지 새로고침]
+
+AuthProvider mount → getMemberMe() → 401
+  → 인터셉터: /refresh → 200 (정상)
+  → 세션 복구
 ```
 
-### 결론: 영향 범위는 제한적
+### 영향 범위 및 k6 검증의 한계
 
-access token TTL이 충분히 길면 대부분의 사용자는 60초 구간 동안 토큰이 만료되지 않아 영향을 받지 않는다. `/refresh` 503 차단은 **사용자 가시적 다운타임이 아니라 특정 조건 하의 로그아웃 리스크**였다.
+| 구분 | 실제 |
+|------|------|
+| access token이 차단 구간 내 만료되지 않은 사용자 | 영향 없음 |
+| access token이 차단 구간 내 만료 + API 호출한 사용자 | 로그아웃 발생 (실험 확인) |
+| refresh token 쿠키 | 로그아웃 후에도 브라우저 생존 → 차단 해제 후 새로고침으로 복구 가능 |
+| k6 `refresh_401_rate = 0%` | Redis 데이터 무결성 검증 ✓, 사용자 로그아웃 발생 여부는 검증 불가 |
 
-| k6가 측정한 것 | 실제 사용자 영향 |
-|--------------|----------------|
-| `/refresh` 직접 호출 → 503 (차단 정상) | access token 만료 + API 호출 타이밍 겹친 사용자만 로그아웃 |
-| `refresh_401_rate = 0%` → 데이터 유실 없음 ✓ | 세션 데이터는 무사, 단 위 조건 해당 사용자는 재로그인 필요 |
+`/refresh`를 능동적으로 반복 호출하는 k6 방식은 실제 사용자 행동과 달라, **컷오버 중 실제 사용자 로그아웃 발생 여부를 검증하지 못했다.** `checks 100%`는 "무중단"이 아닌 "데이터 무결성"을 의미한다.
 
 ---
 

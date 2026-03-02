@@ -26,6 +26,7 @@ keys/
 v2-container/tests/lib/config.js
 v2-container/tests/**/*.html
 v1-bigbang/tests/reports/*.html
+v2-container/scripts/redis-migration/*.html
 
 # Config files (nginx, redis 등 로컬 설정)
 *.conf
@@ -48,3 +49,8 @@ ci_cd/
 # Claude / MCP
 .claude
 .mcp.json
+
+# redis-migration-scripts
+v2-container/scripts/redis-migration/
+
+v2-container/scripts/db-migration/

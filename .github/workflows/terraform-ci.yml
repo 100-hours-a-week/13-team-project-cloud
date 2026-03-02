@@ -15,198 +15,90 @@ concurrency:
   group: terraform-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-env:
-  TF_WORKING_DIR: v2-container/terraform/environments/dev
-
 jobs:
-  lint:
-    name: Lint & Validate
+  # =============================================================================
+  # 변경된 환경 감지
+  # =============================================================================
+  changes:
+    name: Detect Changed Environments
     runs-on: ubuntu-24.04-arm
-    defaults:
-      run:
-        working-directory: v2-container/terraform/environments/dev
+    outputs:
+      dev: ${{ steps.filter.outputs.dev }}
+      prod: ${{ steps.filter.outputs.prod }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: dorny/paths-filter@v3
+        id: filter
         with:
-          terraform_version: "1.14.0"
+          filters: |
+            dev:
+              - 'v2-container/terraform/environments/dev/**'
+              - 'v2-container/terraform/modules/**'
+            prod:
+              - 'v2-container/terraform/environments/prod/**'
+              - 'v2-container/terraform/modules/**'
 
-      - name: Format check
-        id: fmt
-        run: terraform fmt -check -recursive -diff
-        continue-on-error: true
-
-      - name: Init (backend skip)
-        run: terraform init -backend=false -input=false
-
-      - name: Validate
-        id: validate
-        run: terraform validate -no-color
-
-      - name: Post result to PR
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fmt = '${{ steps.fmt.outcome }}';
-            const val = '${{ steps.validate.outcome }}';
-            const allPass = fmt === 'success' && val === 'success';
-            const ok = (s) => s === 'success' ? '✅' : '❌';
-
-            let mood;
-            if (allPass) {
-              const cheers = ['깔끔하네요! 바로 머지 가시죠 🚀', '완벽합니다 👨‍🍳💋', '터짐 없이 통과! 오늘 점심 맛있게 드세요 🍚'];
-              mood = cheers[Math.floor(Math.random() * cheers.length)];
-            } else if (fmt !== 'success' && val === 'success') {
-              const fmtFails = ['어허... 포맷 좀 신경 쓰셔야 할 듯 🙈', 'terraform fmt 한 번만 돌려주세요... 제발요 🥲', '들여쓰기가 춤을 추고 있어요 💃'];
-              mood = fmtFails[Math.floor(Math.random() * fmtFails.length)];
-            } else {
-              const valFails = ['코드가 비명을 지르고 있습니다 🔥', 'validate 실패... 심호흡하고 다시 한번 🧘', '터졌습니다 선생님 💥'];
-              mood = valFails[Math.floor(Math.random() * valFails.length)];
-            }
-
-            const body = `<!-- terraform-ci -->
-            ### ${allPass ? '✨' : '🚨'} Terraform CI
-
-            > ${mood}
-
-            | Step | Result |
-            |------|--------|
-            | Format | ${ok(fmt)} \`${fmt}\` |
-            | Validate | ${ok(val)} \`${val}\` |
-
-            *Run: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find(c => c.body.includes('<!-- terraform-ci -->'));
-            const params = {
-              owner: context.repo.owner, repo: context.repo.repo, body,
-            };
-            if (existing) {
-              await github.rest.issues.updateComment({ ...params, comment_id: existing.id });
-            } else {
-              await github.rest.issues.createComment({ ...params, issue_number: context.issue.number });
-            }
-
-      - name: Fail on error
-        if: steps.fmt.outcome == 'failure'
-        run: exit 1
-
-  cost:
-    name: Infracost
+  # =============================================================================
+  # Dev 비용 분석
+  # =============================================================================
+  cost-dev:
+    name: Infracost (dev)
+    needs: changes
+    if: needs.changes.outputs.dev == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v3
+      - uses: infracost/actions/setup@v3
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Cost breakdown
         run: |
           infracost breakdown \
-            --path=${{ env.TF_WORKING_DIR }} \
+            --path=v2-container/terraform/environments/dev \
             --format=json \
             --out-file=/tmp/infracost.json
 
       - name: Notify Discord
         if: always()
         env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          WEBHOOK: ${{ secrets.INFRACOST_DISCORD_WEBHOOK_URL }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TOTAL=$(jq -r '.totalMonthlyCost // "0"' /tmp/infracost.json)
-          COUNT=$(jq '[.projects[].breakdown.resources[]] | length' /tmp/infracost.json)
+          bash .github/scripts/notify-infracost.sh "dev" "3066993"
 
-          # 단일 jq로 카테고리별 분류 + embed JSON 생성
-          jq -n --slurpfile data /tmp/infracost.json \
-            --arg total "$TOTAL" \
-            --arg count "$COUNT" \
-            --arg pr_title "$PR_TITLE" \
-            --arg run_url "$RUN_URL" \
-            --arg pr_num "$PR_NUM" '
+  # =============================================================================
+  # Prod 비용 분석
+  # =============================================================================
+  cost-prod:
+    name: Infracost (prod)
+    needs: changes
+    if: needs.changes.outputs.prod == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
 
-            # 리소스 추출 (비용 > 0)
-            [$data[0].projects[].breakdown.resources[] |
-              select(.monthlyCost != null and (.monthlyCost | tonumber) > 0)] as $resources |
+      - uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-            # 카테고리 분류
-            def categorize:
-              if (.name | startswith("aws_instance")) then "compute"
-              elif (.name | startswith("aws_nat_gateway")) then "network"
-              elif (.name | startswith("aws_lb")) then "network"
-              elif (.name | startswith("aws_route53")) then "other"
-              elif (.name | startswith("aws_cloudfront")) then "other"
-              else "other"
-              end;
+      - name: Cost breakdown
+        run: |
+          infracost breakdown \
+            --path=v2-container/terraform/environments/prod \
+            --format=json \
+            --out-file=/tmp/infracost.json
 
-            # 카테고리별 그룹핑
-            (reduce $resources[] as $r (
-              {"compute": [], "network": [], "other": []};
-              .[$r | categorize] += [$r]
-            )) as $groups |
-
-            # 카테고리 소계
-            def cat_total(cat): [$groups[cat][] | .monthlyCost | tonumber] | add // 0 |
-              . * 100 | round / 100;
-
-            # 리소스 상세 포맷
-            def format_resources(cat):
-              [$groups[cat][] |
-                "▸ " + (.name | split(".")[1:] | join(".")) + " — $" + .monthlyCost + "/월\n" +
-                ([
-                  ((.costComponents // [])[], (.subresources // [])[].costComponents[]?) |
-                  select(.monthlyCost != null and (.monthlyCost | tonumber) > 0) |
-                  "  └ " + .name + ": $" + .monthlyCost
-                ] | join("\n"))
-              ] | join("\n\n");
-
-            (cat_total("compute") | tostring) as $ct |
-            (cat_total("network") | tostring) as $nt |
-            (cat_total("other") | tostring) as $ot |
-
-            # 요약 embed
-            {embeds: ([
-              {
-                title: ("💰 월 예상 비용: $" + $total),
-                description: (
-                  "**PR:** " + $pr_title + "\n" +
-                  "**리소스:** " + $count + "개\n" +
-                  "[Actions 로그](" + $run_url + ")\n\n" +
-                  "```\n" +
-                  "Compute       $" + $ct + "\n" +
-                  "Networking    $" + $nt + "\n" +
-                  "기타           $" + $ot + "\n" +
-                  "```"
-                ),
-                color: 3066993
-              }
-            ] + (
-              if ($groups["compute"] | length) > 0 then [{
-                title: ("🖥 Compute — $" + $ct),
-                description: ("```\n" + format_resources("compute") + "\n```"),
-                color: 3447003
-              }] else [] end
-            ) + (
-              if ($groups["network"] | length) > 0 then [{
-                title: ("🌐 Networking — $" + $nt),
-                description: ("```\n" + format_resources("network") + "\n```"),
-                color: 15105570
-              }] else [] end
-            ) + (
-              if ($groups["other"] | length) > 0 then [{
-                title: ("📋 기타 — $" + $ot),
-                description: ("```\n" + format_resources("other") + "\n```"),
-                color: 10070709
-              }] else [] end
-            ))}' | curl -sS -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @-
+      - name: Notify Discord
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.INFRACOST_DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          bash .github/scripts/notify-infracost.sh "prod" "15158332"

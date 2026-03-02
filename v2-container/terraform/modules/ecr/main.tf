@@ -1,8 +1,5 @@
-# =============================================================================
-# ECR Repositories (Docker 이미지 저장소)
-# =============================================================================
 resource "aws_ecr_repository" "backend" {
-  name                 = "${local.project}/backend"
+  name                 = "${var.project}/${var.environment}/backend"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -13,8 +10,8 @@ resource "aws_ecr_repository" "backend" {
     encryption_type = "AES256"
   }
 
-  tags = merge(local.common_tags, {
-    Name    = "${local.project}/backend"
+  tags = merge(var.common_tags, {
+    Name    = "${var.project}/${var.environment}/backend"
     Service = "backend"
   })
 
@@ -24,7 +21,7 @@ resource "aws_ecr_repository" "backend" {
 }
 
 resource "aws_ecr_repository" "recommend" {
-  name                 = "${local.project}/recommend"
+  name                 = "${var.project}/${var.environment}/recommend"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -35,8 +32,8 @@ resource "aws_ecr_repository" "recommend" {
     encryption_type = "AES256"
   }
 
-  tags = merge(local.common_tags, {
-    Name    = "${local.project}/recommend"
+  tags = merge(var.common_tags, {
+    Name    = "${var.project}/${var.environment}/recommend"
     Service = "recommend"
   })
 
@@ -45,9 +42,6 @@ resource "aws_ecr_repository" "recommend" {
   }
 }
 
-# =============================================================================
-# ECR Lifecycle Policy (오래된 이미지 자동 정리)
-# =============================================================================
 resource "aws_ecr_lifecycle_policy" "backend" {
   repository = aws_ecr_repository.backend.name
 

@@ -49,12 +49,20 @@ variable "enable_path_blocking" {
   default     = true
 }
 
-variable "monitoring_vpc_peering_id" {
-  description = "Monitoring VPC Peering Connection ID"
+variable "monitoring_sg_id" {
+  description = "prod-monitoring SG ID (prod-monitoring 배포 후 설정, 빈 문자열이면 모니터링 룰 미적용)"
   type        = string
+  default     = ""
+}
+
+variable "vpc_peering_id" {
+  description = "dev-prod VPC 피어링 연결 ID"
+  type        = string
+  default     = ""
 }
 
 variable "price_class" {
   description = "CloudFront Price Class"
   type        = string
 }
+

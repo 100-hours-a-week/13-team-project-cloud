@@ -3,8 +3,8 @@
 # =============================================================================
 resource "aws_security_group" "alb" {
   name        = "${local.project}-${local.environment}-alb-sg"
-  description = "moyeobab-dev-backend-sg" # 기존 SG description 유지 (ForceNew 방지)
-  vpc_id      = aws_vpc.main.id
+  description = "ALB security group (HTTP/HTTPS)"
+  vpc_id      = module.network.vpc_id
 
   tags = merge(local.common_tags, {
     Name = "${local.project}-${local.environment}-alb-sg"
@@ -37,11 +37,9 @@ resource "aws_vpc_security_group_egress_rule" "alb_all" {
 # App Tier Security Group (API, Recommend)
 # =============================================================================
 resource "aws_security_group" "app" {
-  # NOTE: v1 moyeoBab-dev-app-sg와 이름 충돌 (AWS SG name 대소문자 무시)
-  #       v1 정리 후 moyeobab-dev-app-sg로 변경 예정
   name        = "${local.project}-${local.environment}-app-v2-sg"
   description = "App tier security group (API, Recommend)"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.network.vpc_id
 
   tags = merge(local.common_tags, {
     Name = "${local.project}-${local.environment}-app-v2-sg"
@@ -74,47 +72,58 @@ resource "aws_vpc_security_group_egress_rule" "app_all" {
 }
 
 # =============================================================================
-# App Monitoring Security Group (v1 Prometheus scrape 허용)
+# App Monitoring Security Group (Prometheus scrape 허용)
+# NOTE: monitoring_sg_id 설정 후 활성화됨 (prod-monitoring 배포 후)
 # =============================================================================
 resource "aws_security_group" "app_monitoring" {
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
   name        = "${local.project}-${local.environment}-app-monitoring-sg"
   description = "App monitoring (node_exporter, actuator, AI metrics)"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.network.vpc_id
 
   tags = merge(local.common_tags, {
     Name = "${local.project}-${local.environment}-app-monitoring-sg"
   })
 }
 
-# node_exporter (9100) from v1 monitoring
+# node_exporter (9100) from monitoring
 resource "aws_vpc_security_group_ingress_rule" "app_mon_node_exporter" {
-  security_group_id            = aws_security_group.app_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.app_monitoring[0].id
   from_port                    = 9100
   to_port                      = 9100
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
-# Spring Actuator (8080) from v1 monitoring
+# Spring Actuator (8080) from monitoring
 resource "aws_vpc_security_group_ingress_rule" "app_mon_actuator" {
-  security_group_id            = aws_security_group.app_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.app_monitoring[0].id
   from_port                    = 8080
   to_port                      = 8080
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
-# AI metrics (8000) from v1 monitoring
+# AI metrics (8000) from monitoring
 resource "aws_vpc_security_group_ingress_rule" "app_mon_ai_metrics" {
-  security_group_id            = aws_security_group.app_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.app_monitoring[0].id
   from_port                    = 8000
   to_port                      = 8000
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
 resource "aws_vpc_security_group_egress_rule" "app_mon_all" {
-  security_group_id = aws_security_group.app_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id = aws_security_group.app_monitoring[0].id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
@@ -125,7 +134,7 @@ resource "aws_vpc_security_group_egress_rule" "app_mon_all" {
 resource "aws_security_group" "data" {
   name        = "${local.project}-${local.environment}-data-sg"
   description = "Data tier security group (PostgreSQL, Redis)"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.network.vpc_id
 
   tags = merge(local.common_tags, {
     Name = "${local.project}-${local.environment}-data-sg"
@@ -158,12 +167,15 @@ resource "aws_vpc_security_group_egress_rule" "data_all" {
 }
 
 # =============================================================================
-# Data Monitoring Security Group (v1 Prometheus scrape 허용)
+# Data Monitoring Security Group (Prometheus scrape 허용)
+# NOTE: monitoring_sg_id 설정 후 활성화됨 (prod-monitoring 배포 후)
 # =============================================================================
 resource "aws_security_group" "data_monitoring" {
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
   name        = "${local.project}-${local.environment}-data-monitoring-sg"
   description = "Data monitoring (node_exporter, postgres_exporter, redis_exporter)"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.network.vpc_id
 
   tags = merge(local.common_tags, {
     Name = "${local.project}-${local.environment}-data-monitoring-sg"
@@ -172,57 +184,41 @@ resource "aws_security_group" "data_monitoring" {
 
 # node_exporter (9100)
 resource "aws_vpc_security_group_ingress_rule" "data_mon_node_exporter" {
-  security_group_id            = aws_security_group.data_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.data_monitoring[0].id
   from_port                    = 9100
   to_port                      = 9100
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
 # postgres_exporter (9187)
 resource "aws_vpc_security_group_ingress_rule" "data_mon_postgres" {
-  security_group_id            = aws_security_group.data_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.data_monitoring[0].id
   from_port                    = 9187
   to_port                      = 9187
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
 # redis_exporter (9121)
 resource "aws_vpc_security_group_ingress_rule" "data_mon_redis" {
-  security_group_id            = aws_security_group.data_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id            = aws_security_group.data_monitoring[0].id
   from_port                    = 9121
   to_port                      = 9121
   ip_protocol                  = "tcp"
-  referenced_security_group_id = local.v1_monitoring_sg_id
+  referenced_security_group_id = var.monitoring_sg_id
 }
 
 resource "aws_vpc_security_group_egress_rule" "data_mon_all" {
-  security_group_id = aws_security_group.data_monitoring.id
+  count = var.monitoring_sg_id != "" ? 1 : 0
+
+  security_group_id = aws_security_group.data_monitoring[0].id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
-}
-
-# =============================================================================
-# v1 Monitoring SG — v2에서 Loki 접근 허용
-# =============================================================================
-
-# Loki (3100) from v2 App tier
-resource "aws_vpc_security_group_ingress_rule" "v1_mon_loki_from_v2_app" {
-  security_group_id            = local.v1_monitoring_sg_id
-  from_port                    = 3100
-  to_port                      = 3100
-  ip_protocol                  = "tcp"
-  referenced_security_group_id = aws_security_group.app.id
-  description                  = "Loki from v2 app tier"
-}
-
-# Loki (3100) from v2 Data tier
-resource "aws_vpc_security_group_ingress_rule" "v1_mon_loki_from_v2_data" {
-  security_group_id            = local.v1_monitoring_sg_id
-  from_port                    = 3100
-  to_port                      = 3100
-  ip_protocol                  = "tcp"
-  referenced_security_group_id = aws_security_group.data.id
-  description                  = "Loki from v2 data tier"
 }

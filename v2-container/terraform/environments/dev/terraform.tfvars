@@ -12,3 +12,5 @@ ec2_key_name      = "tasteCompass-key"
 
 monitoring_vpc_peering_id = "pcx-0fd722e5877d95009"
 
+price_class = "PriceClass_200"
+

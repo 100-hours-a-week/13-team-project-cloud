@@ -1,27 +1,22 @@
-# =============================================================================
-# Application Load Balancer
-# =============================================================================
 resource "aws_lb" "main" {
-  name               = "moyeoBab-dev-ALB-v2"
+  # NOTE: name은 ForceNew — 기존 AWS 리소스명 유지
+  name               = "moyeoBab-${var.environment}-ALB-${var.app_version}"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = aws_subnet.public[*].id
+  security_groups    = [var.alb_sg_id]
+  subnets            = var.public_subnet_ids
 
-  tags = merge(local.common_tags, {
-    Name = "${local.project}-${local.environment}-alb-v2"
+  tags = merge(var.common_tags, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-alb"
   })
 }
 
-# =============================================================================
-# Target Group — Backend V2 (Spring Boot)
-# =============================================================================
 resource "aws_lb_target_group" "backend" {
-  # NOTE: name은 ForceNew — 기존 AWS 리소스명 유지 (WAS→api 변경은 재생성 필요)
-  name     = "moyeoBab-dev-WAS-v2"
+  # NOTE: name은 ForceNew — 기존 AWS 리소스명 유지
+  name     = "moyeoBab-${var.environment}-WAS-${var.app_version}"
   port     = 8080
   protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  vpc_id   = var.vpc_id
 
   health_check {
     enabled             = true
@@ -34,28 +29,23 @@ resource "aws_lb_target_group" "backend" {
     unhealthy_threshold = 3
   }
 
-  tags = merge(local.common_tags, {
-    Name = "${local.project}-${local.environment}-api-tg-v2"
+  tags = merge(var.common_tags, {
+    Name = "${var.project}-${var.environment}-${var.app_version}-api-tg"
   })
 }
 
 resource "aws_lb_target_group_attachment" "backend_1" {
   target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = aws_instance.backend_1.id
+  target_id        = var.backend_1_id
   port             = 8080
 }
 
 resource "aws_lb_target_group_attachment" "backend_2" {
   target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = aws_instance.backend_2.id
+  target_id        = var.backend_2_id
   port             = 8080
 }
 
-# =============================================================================
-# Listeners
-# =============================================================================
-
-# HTTP → HTTPS redirect
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
@@ -71,25 +61,19 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# HTTPS → Weighted Forward (Canary: V1=100, V2=0 기본값)
-# 카나리 방향: V1 100% → V1/V2 50/50 → V2 100% (run-canary.sh가 단계 제어)
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = data.aws_acm_certificate.alb.arn
+  certificate_arn   = var.acm_certificate_arn
 
   default_action {
     type = "forward"
     forward {
       target_group {
-        arn    = aws_lb_target_group.backend.arn # V2
+        arn    = aws_lb_target_group.backend.arn
         weight = 100
-      }
-      target_group {
-        arn    = aws_lb_target_group.backend_v1.arn # V1
-        weight = 0
       }
       stickiness {
         enabled  = false
@@ -99,13 +83,10 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# =============================================================================
-# Path Blocking (prod에서 활성화, dev에서는 비활성)
-# =============================================================================
 resource "aws_lb_listener_rule" "block_actuator" {
   count        = var.enable_path_blocking ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
-  priority     = 1
+  priority     = 2
 
   condition {
     path_pattern {
@@ -126,7 +107,7 @@ resource "aws_lb_listener_rule" "block_actuator" {
 resource "aws_lb_listener_rule" "block_swagger" {
   count        = var.enable_path_blocking ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
-  priority     = 2
+  priority     = 3
 
   condition {
     path_pattern {

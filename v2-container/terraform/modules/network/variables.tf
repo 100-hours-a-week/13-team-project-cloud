@@ -1,0 +1,18 @@
+variable "project"                   { type = string }
+variable "environment"               { type = string }
+variable "app_version"               { type = string }
+variable "common_tags"               { type = map(string) }
+variable "vpc_cidr"                  { type = string }
+variable "availability_zones"        { type = list(string) }
+variable "public_subnet_cidrs"       { type = list(string) }
+variable "private_app_subnet_cidrs"  { type = list(string) }
+variable "private_data_subnet_cidrs" { type = list(string) }
+variable "monitoring_vpc_peering_id" {
+  type    = string
+  default = ""
+}
+
+variable "monitoring_vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
