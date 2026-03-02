@@ -3,7 +3,7 @@ set -e
 exec > >(tee /var/log/user-data.log) 2>&1
 
 REGION="ap-northeast-2"
-DEPLOY_ENV="prod"
+DEPLOY_ENV="${deploy_env}"
 COMPOSE_DIR="/home/ubuntu/backend"
 SSM_PREFIX="/moyeobab/spring/${DEPLOY_ENV}"
 

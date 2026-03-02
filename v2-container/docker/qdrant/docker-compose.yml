@@ -1,20 +1,24 @@
 # =============================================================================
-# Recommend Server (FastAPI)
-# 배포: ECR에서 이미지 pull → docker compose up -d
+# Qdrant Server
+# 데이터: /data/qdrant에 영속 저장
+# 메트릭: 빌트인 /metrics 엔드포인트 (포트 6333) — 별도 exporter 불필요
 # =============================================================================
 services:
-  app:
-    image: ${ECR_REGISTRY}/moyeobab/${ENV}/recommend:${IMAGE_TAG}
+  qdrant:
+    image: qdrant/qdrant:v1.16.3
     ports:
-      - "8000:8000"
-    env_file: .env
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    volumes:
+      - /data/qdrant:/qdrant/storage
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 5
     logging:
       driver: json-file
       options:
@@ -30,7 +34,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - promtail-positions:/tmp
     environment:
-      - HOSTNAME=recommend-v2
+      - HOSTNAME=qdrant-v2
       - ENV=dev
     restart: unless-stopped
 
