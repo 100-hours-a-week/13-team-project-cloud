@@ -12,8 +12,9 @@ resource "aws_launch_template" "this" {
   }
 
   network_interfaces {
-    device_index    = 0
-    security_groups = var.security_group_ids
+    device_index       = 0
+    security_groups    = var.security_group_ids
+    private_ip_address = var.private_ip_address
   }
 
   block_device_mappings {
