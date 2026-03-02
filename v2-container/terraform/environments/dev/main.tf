@@ -30,10 +30,8 @@ module "compute" {
   environment            = local.environment
   app_version            = local.version
   common_tags            = local.common_tags
-  service_tags           = local.service_tags
+
   ec2_ami_id             = var.ec2_ami_id
-  ec2_instance_type      = var.ec2_instance_type
-  ec2_key_name           = var.ec2_key_name
   private_app_subnet_id  = module.network.private_app_subnet_ids[0]
   app_sg_id              = module.security.app_sg_id
   app_monitoring_sg_id   = module.security.app_monitoring_sg_id
@@ -42,8 +40,7 @@ module "compute" {
 
   postgresql_instances = {
     primary = {
-      subnet_id    = module.network.private_data_subnet_ids[0]
-      extra_sg_ids = [module.security.app_sg_id]
+      subnet_id = module.network.private_data_subnet_ids[0]
     }
   }
 
@@ -87,7 +84,6 @@ module "frontend" {
   region              = var.region
   acm_certificate_arn = data.aws_acm_certificate.cloudfront.arn
   domain_alias        = "dev.moyeobab.com"
-  price_class         = var.price_class
 }
 
 module "config_s3" {
@@ -116,11 +112,7 @@ module "parameter_store" {
   common_tags               = local.common_tags
   region                    = var.region
   account_id                = data.aws_caller_identity.current.account_id
-  ec2_role_id               = module.compute.ec2_role_id
-  ssm_prefix                = local.ssm_prefix
-  ssm_recommend_prefix      = local.ssm_recommend_prefix
-  ssm_parameters            = local.ssm_parameters
-  ssm_recommend_parameters  = local.ssm_recommend_parameters
+  ec2_role_id  = module.compute.ec2_role_id
 }
 
 module "github_actions" {
