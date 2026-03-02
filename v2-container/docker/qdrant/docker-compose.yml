@@ -1,0 +1,42 @@
+# =============================================================================
+# Qdrant Server
+# 데이터: /data/qdrant에 영속 저장
+# 메트릭: 빌트인 /metrics 엔드포인트 (포트 6333) — 별도 exporter 불필요
+# =============================================================================
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.16.3
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    volumes:
+      - /data/qdrant:/qdrant/storage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    command: -config.file=/etc/promtail/config.yml -config.expand-env=true
+    volumes:
+      - ./promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail-positions:/tmp
+    environment:
+      - HOSTNAME=qdrant-v2
+      - ENV=dev
+    restart: unless-stopped
+
+volumes:
+  promtail-positions:
