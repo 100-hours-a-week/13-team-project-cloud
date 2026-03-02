@@ -38,6 +38,14 @@ resource "aws_route53_record" "internal_redis" {
   records = [module.compute.redis_private_ips["primary"]]
 }
 
+resource "aws_route53_record" "internal_qdrant" {
+  zone_id = aws_route53_zone.internal.zone_id
+  name    = "qdrant.internal.dev.moyeobab.com"
+  type    = "A"
+  ttl     = 300
+  records = [module.compute.qdrant_private_ips["primary"]]
+}
+
 # =============================================================================
 # Frontend (CloudFront)
 # NOTE: 기존 dev.moyeobab.com A record 존재. CI/CD 검증 완료 후 import → apply.

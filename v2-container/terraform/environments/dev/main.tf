@@ -49,6 +49,13 @@ module "compute" {
       subnet_id = module.network.private_data_subnet_ids[0]
     }
   }
+
+  qdrant_instances = {
+    primary = {
+      subnet_id     = module.network.private_data_subnet_ids[0]
+      instance_type = "t4g.micro"
+    }
+  }
 }
 
 module "alb" {
