@@ -1,0 +1,13 @@
+#!/bin/bash
+export PATH=$PATH:/Users/gguip/Library/Python/3.12/bin
+
+# 1. YAML 무결성 검사
+python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:] if f.endswith('.yaml') or f.endswith('.yml')]" $(git diff --cached --name-only) 2>/dev/null
+
+# 2. 민감 정보 검사
+if command -v detect-secrets >/dev/null 2>&1; then
+    # 스테이징된 파일들만 대상으로 검사
+    git diff --cached --name-only | xargs detect-secrets-hook --baseline .github/security/secrets.baseline
+else
+    echo "Warning: detect-secrets not found. Skipping secret scan."
+fi
