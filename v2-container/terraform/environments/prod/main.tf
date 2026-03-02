@@ -27,10 +27,8 @@ module "compute" {
   environment        = local.environment
   app_version        = local.version
   common_tags        = local.common_tags
-  service_tags       = local.service_tags
-  ec2_ami_id         = var.ec2_ami_id
-  ec2_instance_type  = var.ec2_instance_type
-  ec2_key_name       = var.ec2_key_name
+
+  ec2_ami_id = var.ec2_ami_id
 
   private_app_subnet_id = module.network.private_app_subnet_ids[0]
 
@@ -82,11 +80,14 @@ module "asg_backend" {
   app_version  = local.version
   common_tags  = local.common_tags
   service_name = "backend"
-  service_tags = local.service_tags.backend
+  service_tags = {
+    Tier        = "app"
+    Service     = "backend"
+    ServicePort = "8080"
+    MetricsPath = "/actuator/prometheus"
+  }
 
-  ami_id                = var.ec2_ami_id
-  instance_type         = var.ec2_instance_type
-  key_name              = var.ec2_key_name
+  ami_id = var.ec2_ami_id
   instance_profile_name = module.compute.ec2_instance_profile_name
 
   security_group_ids = compact([
@@ -130,7 +131,6 @@ module "frontend" {
   region              = var.region
   acm_certificate_arn = data.aws_acm_certificate.cloudfront.arn
   domain_alias        = "moyeobab.com"
-  price_class         = var.price_class
 }
 
 # =============================================================================
@@ -183,11 +183,7 @@ module "parameter_store" {
   common_tags              = local.common_tags
   region                   = var.region
   account_id               = data.aws_caller_identity.current.account_id
-  ec2_role_id              = module.compute.ec2_role_id
-  ssm_prefix               = local.ssm_prefix
-  ssm_recommend_prefix     = local.ssm_recommend_prefix
-  ssm_parameters           = local.ssm_parameters
-  ssm_recommend_parameters = local.ssm_recommend_parameters
+  ec2_role_id  = module.compute.ec2_role_id
 }
 
 # =============================================================================

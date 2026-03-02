@@ -1,6 +1,7 @@
 variable "region" {
   description = "AWS region"
   type        = string
+  default     = "ap-northeast-2"
 }
 
 variable "vpc_cidr" {
@@ -33,16 +34,6 @@ variable "ec2_ami_id" {
   type        = string
 }
 
-variable "ec2_instance_type" {
-  description = "EC2 instance type"
-  type        = string
-}
-
-variable "ec2_key_name" {
-  description = "SSH key pair name"
-  type        = string
-}
-
 variable "enable_path_blocking" {
   description = "ALB에서 /actuator, /swagger 경로 차단"
   type        = bool
@@ -51,10 +42,5 @@ variable "enable_path_blocking" {
 
 variable "monitoring_vpc_peering_id" {
   description = "Monitoring VPC Peering Connection ID"
-  type        = string
-}
-
-variable "price_class" {
-  description = "CloudFront Price Class"
   type        = string
 }

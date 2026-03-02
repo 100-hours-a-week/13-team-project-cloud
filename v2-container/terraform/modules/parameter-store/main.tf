@@ -1,3 +1,8 @@
+locals {
+  ssm_prefix           = "/${var.project}/spring/${var.environment}"
+  ssm_recommend_prefix = "/${var.project}/recommend/${var.environment}"
+}
+
 # =============================================================================
 # SSM Parameter Store — Spring Boot 환경변수
 # 값은 AWS Console에서 관리, Terraform은 리소스 존재만 관리
@@ -5,7 +10,7 @@
 resource "aws_ssm_parameter" "spring" {
   for_each = var.ssm_parameters
 
-  name        = "${var.ssm_prefix}/${each.key}"
+  name        = "${local.ssm_prefix}/${each.key}"
   type        = each.value.type
   description = each.value.description
   value       = "managed-by-console"
@@ -23,7 +28,7 @@ resource "aws_ssm_parameter" "spring" {
 resource "aws_ssm_parameter" "recommend" {
   for_each = var.ssm_recommend_parameters
 
-  name        = "${var.ssm_recommend_prefix}/${each.key}"
+  name        = "${local.ssm_recommend_prefix}/${each.key}"
   type        = each.value.type
   description = each.value.description
   value       = "managed-by-console"
