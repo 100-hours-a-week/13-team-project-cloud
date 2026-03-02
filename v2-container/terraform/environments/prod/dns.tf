@@ -50,6 +50,14 @@ resource "aws_route53_record" "internal_redis" {
   records = [module.compute.redis_private_ips["primary"]]
 }
 
+resource "aws_route53_record" "internal_qdrant" {
+  zone_id = aws_route53_zone.internal.zone_id
+  name    = "qdrant.internal.moyeobab.com"
+  type    = "A"
+  ttl     = 300
+  records = [module.compute.qdrant_private_ips["primary"]]
+}
+
 # =============================================================================
 # Frontend (CloudFront)
 # NOTE: 프론트엔드 S3 배포 완료 후 아래 주석 해제 + moyeobab.com 기존 A 레코드 삭제 후 apply

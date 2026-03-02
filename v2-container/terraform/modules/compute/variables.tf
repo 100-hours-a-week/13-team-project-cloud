@@ -17,6 +17,12 @@ variable "service_tags" {
       ServicePort = "6379"
       MetricsPath = ""
     }
+    qdrant = {
+      Tier        = "data"
+      Service     = "qdrant"
+      ServicePort = "6333"
+      MetricsPath = ""
+    }
   }
 }
 variable "ec2_ami_id"            { type = string }
@@ -62,4 +68,15 @@ variable "redis_instances" {
     instance_type = optional(string)
     volume_size   = optional(number, 20)
   }))
+}
+
+variable "qdrant_instances" {
+  description = "Qdrant 인스턴스 맵 (key = 인스턴스 이름, e.g. primary, replica)"
+  type = map(object({
+    subnet_id     = string
+    private_ip    = optional(string)
+    instance_type = optional(string)
+    volume_size   = optional(number, 20)
+  }))
+  default = {}
 }

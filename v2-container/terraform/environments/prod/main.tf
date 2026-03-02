@@ -60,6 +60,14 @@ module "compute" {
       private_ip = "10.0.7.20"
     }
   }
+
+  qdrant_instances = {
+    primary = {
+      subnet_id     = module.network.private_data_subnet_ids[0]
+      private_ip    = "10.0.2.30"
+      instance_type = "t4g.micro"
+    }
+  }
 }
 
 # =============================================================================

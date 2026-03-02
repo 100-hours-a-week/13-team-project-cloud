@@ -106,6 +106,14 @@ resource "aws_vpc_security_group_ingress_rule" "data_redis" {
   referenced_security_group_id = aws_security_group.app.id
 }
 
+resource "aws_vpc_security_group_ingress_rule" "data_qdrant" {
+  security_group_id            = aws_security_group.data.id
+  from_port                    = 6333
+  to_port                      = 6333
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.app.id
+}
+
 resource "aws_vpc_security_group_egress_rule" "data_all" {
   security_group_id = aws_security_group.data.id
   ip_protocol       = "-1"
