@@ -47,6 +47,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.dev == 'true'
     runs-on: ubuntu-24.04-arm
+    # environment: develop
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +80,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.prod == 'true'
     runs-on: ubuntu-24.04-arm
+    # environment: production
     steps:
       - uses: actions/checkout@v4
 
