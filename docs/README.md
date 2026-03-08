@@ -44,7 +44,7 @@ docs/
 | [DR-007 트래픽 진입점 API 선정](architecture/DR-007-kubernetes-gateway-api-selection.md) | 2026-03-08 | 클러스터 외부 트래픽의 Kubernetes 표현 모델로 Gateway API 채택 |
 | [DR-008 Kubernetes Gateway Controller 선정](architecture/DR-008-kubernetes-gateway-controller-selection.md) | 2026-03-08 | Kubernetes 외부 진입 계층의 Gateway 컨트롤러로 Traefik 채택 |
 | [DR-009 도메인 및 인증서 관리 방식 선정](architecture/DR-009-domain-and-certificate-management.md) | 2026-03-08 | Traefik에서 TLS 종료, 인증서 lifecycle은 cert-manager가 담당하는 기준선 채택 |
-| [DR-010 Service 데이터플레인 전략 선정](architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md) | 2026-03-08 | `kube-proxy` 유지, 초기 모드는 `iptables`, `nftables`는 후속 검토 |
+| [DR-010 Service 데이터플레인 전략 선정](architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md) | 2026-03-08 | `kube-proxy` 유지, 초기 모드는 `iptables`, `ipvs` 비선정, eBPF replacement 제외 |
 
 ### kubernetes/ — Kubernetes 설계 본문
 
@@ -57,7 +57,7 @@ docs/
 | [K8S-005 Cilium 심화](kubernetes/K8S-005-cilium-deep-dive.md) | 2026-03-08 | Cilium의 eBPF 통합 모델과 장기 재검토 조건 정리 |
 | [K8S-006 Service 데이터플레인 비교 연구](kubernetes/K8S-006-service-dataplane-comparison-study.md) | 2026-03-08 | `Service ClusterIP` 전달 계층과 `kube-proxy` 모드 비교 |
 | [K8S-007 kube-proxy iptables 심화](kubernetes/K8S-007-kube-proxy-iptables-deep-dive.md) | 2026-03-08 | `iptables`를 현재 Service 데이터플레인 기준선으로 둔 이유 정리 |
-| [K8S-008 kube-proxy nftables 심화](kubernetes/K8S-008-kube-proxy-nftables-deep-dive.md) | 2026-03-08 | `nftables`를 유망한 후속 후보로 본 이유 정리 |
+| [K8S-008 kube-proxy nftables 참고 메모](kubernetes/K8S-008-kube-proxy-nftables-deep-dive.md) | 2026-03-08 | `nftables`가 무엇인지와 현재 기준선에 넣지 않은 이유 정리 |
 | [K8S-009 kube-proxy ipvs 심화](kubernetes/K8S-009-kube-proxy-ipvs-deep-dive.md) | 2026-03-08 | `ipvs`의 동작과 deprecated 방향 정리 |
 | [K8S-010 eBPF Service 데이터플레인 메모](kubernetes/K8S-010-ebpf-service-dataplane-note.md) | 2026-03-08 | eBPF replacement를 현재 제외한 이유 정리 |
 
@@ -99,9 +99,9 @@ docs/
 12. [DR-010 Service 데이터플레인 전략 선정](architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md)
 13. [K8S-006 Service 데이터플레인 비교 연구](kubernetes/K8S-006-service-dataplane-comparison-study.md)
 14. [K8S-007 kube-proxy iptables 심화](kubernetes/K8S-007-kube-proxy-iptables-deep-dive.md)
-15. [K8S-008 kube-proxy nftables 심화](kubernetes/K8S-008-kube-proxy-nftables-deep-dive.md)
-16. [K8S-009 kube-proxy ipvs 심화](kubernetes/K8S-009-kube-proxy-ipvs-deep-dive.md)
-17. [K8S-010 eBPF Service 데이터플레인 메모](kubernetes/K8S-010-ebpf-service-dataplane-note.md)
+15. [K8S-009 kube-proxy ipvs 심화](kubernetes/K8S-009-kube-proxy-ipvs-deep-dive.md)
+16. [K8S-010 eBPF Service 데이터플레인 메모](kubernetes/K8S-010-ebpf-service-dataplane-note.md)
+17. 필요 시 [K8S-008 kube-proxy nftables 참고 메모](kubernetes/K8S-008-kube-proxy-nftables-deep-dive.md)
 18. 필요 시 `v3-kubernetes/docs` 참고 자료
 
 ---
@@ -142,7 +142,7 @@ K8S-001 Kubernetes 최종 설계서
   └→ DR-010 Service 데이터플레인 전략 선정
        ├→ K8S-006 Service 데이터플레인 비교 연구
        ├→ K8S-007 kube-proxy iptables 심화
-       ├→ K8S-008 kube-proxy nftables 심화
+       ├→ K8S-008 kube-proxy nftables 참고 메모
        ├→ K8S-009 kube-proxy ipvs 심화
        └→ K8S-010 eBPF Service 데이터플레인 메모
 ```
