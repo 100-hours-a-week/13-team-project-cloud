@@ -27,13 +27,13 @@ eBPF replacement는 단순히 `kube-proxy` 구현 모드를 바꾸는 것이 아
 - 일부 관측성
 - 네트워크 운영 모델
 
-즉 이건 `iptables`와 `nftables` 같은 `kube-proxy` 내부 모드 변경보다 더 큰 수준의 설계 변경이다.
+즉 이건 `iptables` 같은 `kube-proxy` 내부 모드 변경보다 더 큰 수준의 설계 변경이다.
 
 ---
 
 ## 3) 왜 `kube-proxy` 모드 변경과 성격이 다른가
 
-`iptables`, `nftables`, `ipvs`는 모두 "`kube-proxy`가 어떻게 `Service ClusterIP`를 구현할 것인가"의 차이다.
+`iptables`와 `ipvs`는 모두 "`kube-proxy`가 어떻게 `Service ClusterIP`를 구현할 것인가"의 차이다.
 
 반면 eBPF replacement는 보통 아래를 함께 바꾼다.
 
@@ -68,7 +68,7 @@ eBPF replacement는 단순히 `kube-proxy` 구현 모드를 바꾸는 것이 아
 
 ### 5.2. 운영 이해도와 디버깅 비용이 높다
 
-현재 단계에서는 `Service ClusterIP`, `kube-proxy`, `iptables`, `nftables`, `ipvs`를 먼저 명확히 이해하는 편이 더 중요하다. eBPF replacement는 이 위에 또 하나의 복잡도를 올린다.
+현재 단계에서는 `Service ClusterIP`, `kube-proxy`, `iptables`, `ipvs`를 먼저 명확히 이해하는 편이 더 중요하다. eBPF replacement는 이 위에 또 하나의 복잡도를 올린다.
 
 ### 5.3. 현재 실익이 충분히 크지 않다
 

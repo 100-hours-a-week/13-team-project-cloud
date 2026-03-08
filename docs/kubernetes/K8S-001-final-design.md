@@ -37,6 +37,36 @@
 | [DR-009 도메인 및 인증서 관리 방식 선정](../architecture/DR-009-domain-and-certificate-management.md) | `Traefik`에서 TLS 종료, `cert-manager`가 인증서 lifecycle 담당 |
 | [DR-010 Service 데이터플레인 전략 선정](../architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md) | `kube-proxy` 유지, 초기 모드는 `iptables` 채택 |
 
+### 2.1. 최종 네트워크 흐름 요약
+
+아래 그림은 현재 기준선에서 실제 통신이 어떻게 흐르는지 한 번에 보여준다.
+
+```mermaid
+flowchart LR
+    U["사용자"] --> PDNS["Public DNS"]
+    PDNS --> NLB["Public NLB<br/>(TCP 443 pass-through)"]
+    NLB --> TR["Traefik Gateway<br/>(TLS termination)"]
+    TR --> BSVC["backend Service ClusterIP"]
+    BSVC --> BPOD["backend Pod"]
+
+    BPOD --> RSVC["recommend Service ClusterIP"]
+    RSVC --> RPOD["recommend Pod"]
+
+    BPOD --> CDNS["CoreDNS"]
+    RPOD --> CDNS
+    CDNS --> PRDNS["Route53 Private DNS"]
+    PRDNS --> DATA1["PostgreSQL / Redis / Kafka<br/>(EC2 private endpoint)"]
+    PRDNS --> DATA2["Qdrant<br/>(EC2 private endpoint)"]
+```
+
+이 흐름을 현재 구조 기준으로 해석하면 아래와 같다.
+
+- 외부 요청은 `public NLB`를 거쳐 `Traefik`으로 들어온다.
+- HTTPS 세션 종료와 L7 라우팅은 `Traefik`이 담당한다.
+- `Service ClusterIP -> Pod endpoint` 전달은 `kube-proxy`가 담당한다.
+- 노드 간 Pod 연결이 필요하면 Pod 네트워크는 `Flannel`이 담당한다.
+- 외부 데이터 계층 연결은 `CoreDNS -> Route53 private DNS -> EC2 private endpoint` 경로를 사용한다.
+
 ---
 
 ## 3) 현재 상황과 설계 범위
@@ -86,7 +116,7 @@
    특정 배포판의 번들 기본값에 과하게 종속되지 않는다.
 
 5. **확장 가능성 유지**
-지금은 단순하게 시작하되, HA, `nftables`, 데이터 영역 클러스터화, DNS 자동화 같은 후속 경로를 막지 않는다.
+지금은 단순하게 시작하되, HA, 데이터 영역 클러스터화, DNS 자동화 같은 후속 경로를 막지 않는다.
 
 ---
 
@@ -226,7 +256,7 @@ Service 데이터플레인은 `kube-proxy`를 유지하고, 초기 모드는 `ip
 - `Traefik`
   외부 L7 라우팅과 TLS 종료
 
-`nftables`는 후속 재검토 후보로 두고, `ipvs`는 채택하지 않으며, eBPF replacement는 현재 제외한다.
+`ipvs`는 채택하지 않으며, eBPF replacement는 현재 제외한다.
 
 ### 8.3. NetworkPolicy
 

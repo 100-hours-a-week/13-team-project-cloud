@@ -1,23 +1,23 @@
-# K8S-008: kube-proxy nftables 심화 - 왜 유망한 후속 후보인가
+# K8S-008: kube-proxy nftables 참고 메모 - 무엇이고 왜 현재 기준선에 넣지 않았는가
 
 | 항목 | 내용 |
 |------|------|
 | 날짜 | 2026-03-08 |
 | 상태 | 작성 완료 |
-| 문서 역할 | `kube-proxy` `nftables` 모드의 장점과 현재 비선정 이유 정리 |
+| 문서 역할 | `kube-proxy` `nftables` 모드의 특징과 현재 기준선에 넣지 않은 이유 정리 |
 | 관련 문서 | [K8S-006 Service 데이터플레인 비교 연구](K8S-006-service-dataplane-comparison-study.md), [DR-010 Service 데이터플레인 전략 선정](../architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md) |
 
 ---
 
 ## 1) 문서 목적
 
-이 문서는 `nftables` 모드가 단순히 "새로운 옵션"이 아니라, 장기적으로 `iptables`와 `ipvs`를 대체할 가능성이 큰 후보라는 점과, 그럼에도 왜 지금 즉시 기준선으로 올리지 않는지 설명하기 위해 작성했다.
+이 문서는 `nftables` 모드가 무엇인지와 `iptables` 대비 어떤 차이가 있는지를 정리하고, 왜 현재 설계 기준선에는 넣지 않았는지 설명하기 위해 작성했다.
 
 ---
 
 ## 2) nftables 모드가 무엇인가
 
-Kubernetes 공식 문서와 블로그 기준으로 `nftables`는 Linux에서 사용할 수 있는 `kube-proxy` 모드이며, `iptables`와 `ipvs`의 후속 구현으로 설명된다.
+Kubernetes 공식 문서와 블로그 기준으로 `nftables`는 Linux에서 사용할 수 있는 `kube-proxy` 모드다.
 
 Kubernetes v1.33 release 문서는 `nftables` backend가 stable이라고 안내하며, 성능과 확장성 측면에서 개선을 제공한다고 설명한다.
 
@@ -40,19 +40,15 @@ flowchart LR
 
 ---
 
-## 4) 장점
+## 4) 기술적 특징
 
-### 4.1. `iptables`와 `ipvs`의 후속 후보로 보고 있다
-
-Kubernetes 블로그는 `nftables`가 장기적으로는 `iptables`와 `ipvs`를 대체하는 방향이며, 특히 `ipvs`보다 더 적합한 구현이라고 설명한다.
-
-### 4.2. 대규모에서 성능과 규칙 관리 측면이 유리하다
+### 4.1. 큰 규모에서 dispatch 구조가 더 단순하다
 
 특히 `Service` 수와 endpoint 수가 커질수록 `nftables`는 `iptables`보다 효율적인 경로가 될 수 있다.
 
-### 4.3. 공식 프로젝트의 현재 권장 방향과 가깝다
+### 4.2. 규칙 갱신 API가 더 점진적이다
 
-Kubernetes는 `iptables`를 당분간 계속 지원하겠다고 하지만, 장기적으로는 `nftables`가 더 나은 구현이라고 분명히 설명한다.
+변경된 Service와 endpoint에 대해 더 부분적으로 update를 보낼 수 있다는 점이 특징이다.
 
 ---
 
@@ -84,9 +80,9 @@ Kubernetes 문서 기준 `nftables` 모드는 kernel 5.13+와 적절한 `nft` us
 
 현재 단계에서는 이 전제를 Service 데이터플레인 기준선으로 함께 잠그기보다, 보수적 기준선을 먼저 두는 편이 적절하다.
 
-### 6.3. 운영 이해도와 디버깅 경험이 아직 낮다
+### 6.3. 실제 설계 검토 범위에 포함하지 않았다
 
-현재는 `nftables` 규칙 구조와 운영 경험이 충분히 쌓이지 않았다. 따라서 성능상 장점이 있더라도, 지금 당장 기준선으로 채택하는 것은 운영 설명 가능성을 떨어뜨릴 수 있다.
+이번 설계에서는 `iptables`, `ipvs`, eBPF replacement를 중심으로 기준선을 정리했고, `nftables`는 존재만 인지하는 수준으로 남겼다. 따라서 성능상 장점이 있더라도, 지금 당장 기준선이나 후속 우선 검토 대상으로 두지 않는다.
 
 ---
 
@@ -99,15 +95,13 @@ Kubernetes 문서 기준 `nftables` 모드는 kernel 5.13+와 적절한 `nft` us
 - Linux 6.1 미만 커널의 일부 conntrack 문제에 대해 `iptables`가 제공하던 완화 로직이 기본 포함되지 않는다.
 - Kubernetes 블로그는 다른 네트워킹 구성 요소나 관측 도구가 아직 `nftables` 모드를 충분히 지원하지 않을 수 있다고 경고한다.
 
-즉 `nftables`는 성능상 더 나은 후속 후보지만, **기존 `iptables`의 호환성 습관까지 그대로 기대하면 안 된다.**
+즉 `nftables`는 기술적으로 알아둘 가치가 있지만, **기존 `iptables`의 호환성 습관까지 그대로 기대하면 안 된다.**
 
 ---
 
 ## 8) 정리
 
-`nftables`는 "안 좋은 선택지"가 아니라, **현재 기준선 뒤에 오는 가장 유력한 후속 후보**다.
-
-따라서 현재는 `iptables`를 쓰되, `Service` 규모나 운영 이해도가 충분히 올라오면 가장 먼저 재검토할 대상은 `nftables`다.
+`nftables`는 Linux `kube-proxy`의 공식 대안 중 하나다. 다만 이번 설계에서는 실제 채택 후보로 깊게 검토하지 않았으므로, 현재는 참고 메모 수준으로만 남긴다.
 
 ---
 

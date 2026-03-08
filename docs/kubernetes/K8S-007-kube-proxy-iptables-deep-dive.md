@@ -82,9 +82,9 @@ Kubernetes 공식 config API 문서는 Linux에서 `kube-proxy` 기본 모드가
 
 `iptables` 모드는 이 점에서 가장 익숙하고 자료도 풍부하다.
 
-### 5.3. `nftables`나 eBPF replacement로 가기 전 기준선이 된다
+### 5.3. 다른 대안과 비교할 기준선을 제공한다
 
-현재 `iptables`를 기준선으로 잡아두면, 이후 `nftables`나 eBPF replacement로 넘어갈 때 비교 기준도 선명해진다.
+현재 `iptables`를 기준선으로 잡아두면, 이후 다른 `kube-proxy` 모드나 eBPF replacement를 검토할 때 비교 기준도 선명해진다.
 
 즉 `iptables`는 최종 목표가 아니라, **현재 운영 기준선**으로서 의미가 있다.
 
@@ -113,13 +113,13 @@ Kubernetes 공식 config API 문서는 Linux에서 `kube-proxy` 기본 모드가
 
 한계
 
-- 대규모 `Service`와 endpoint 수에서 `nftables`보다 비효율적일 수 있다.
+- 대규모 `Service`와 endpoint 수에서 규칙 수 증가에 따른 비효율이 커질 수 있다.
 - 장기적으로 가장 진보된 데이터플레인이라고 보기는 어렵다.
 - 이후 트래픽 규모가 커지면 재검토가 필요하다.
 
 ---
 
-## 8) `nftables`와 비교했을 때의 현재 차이
+## 8) 참고 대안과 비교했을 때의 현재 차이
 
 | 항목 | `iptables` | `nftables` |
 |------|------------|-------------|
@@ -130,7 +130,7 @@ Kubernetes 공식 config API 문서는 Linux에서 `kube-proxy` 기본 모드가
 | conntrack 완화 로직 | 기본 포함 | 기본 미포함 |
 | 현재 문서/운영 축적 | 더 많음 | 상대적으로 적음 |
 
-즉 `nftables`가 장기적으로 더 좋아 보이더라도, 현재 시점에서는 `iptables` 쪽이 호환성과 운영 이해도 측면에서 더 보수적인 기준선이다.
+즉 다른 대안이 존재하더라도, 현재 시점에서는 `iptables` 쪽이 호환성과 운영 이해도 측면에서 더 보수적인 기준선이다.
 
 ---
 
@@ -139,8 +139,7 @@ Kubernetes 공식 config API 문서는 Linux에서 `kube-proxy` 기본 모드가
 아래 조건이 생기면 `iptables` 기준선은 재검토 대상이 된다.
 
 1. `Service` 수와 endpoint 수가 증가해 규칙 규모가 부담이 될 때
-2. 커널과 운영 환경이 `nftables` 전환을 안정적으로 수용할 수 있을 때
-3. eBPF replacement의 실익이 실제 운영상 커질 때
+2. 다른 `kube-proxy` 모드나 eBPF replacement의 실익이 실제 운영상 커질 때
 
 ---
 

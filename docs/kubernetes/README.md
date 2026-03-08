@@ -17,7 +17,7 @@ Kubernetes 관련 문서는 이 디렉터리에서 관리한다.
 - [K8S-005 Cilium 심화](K8S-005-cilium-deep-dive.md): Cilium을 장기 고도화 후보로 본 이유 정리
 - [K8S-006 Service 데이터플레인 비교 연구](K8S-006-service-dataplane-comparison-study.md): `kube-proxy` 모드와 eBPF replacement 비교
 - [K8S-007 kube-proxy iptables 심화](K8S-007-kube-proxy-iptables-deep-dive.md): `iptables`를 현재 기준선으로 둔 이유 정리
-- [K8S-008 kube-proxy nftables 심화](K8S-008-kube-proxy-nftables-deep-dive.md): `nftables`를 후속 후보로 둔 이유 정리
+- [K8S-008 kube-proxy nftables 참고 메모](K8S-008-kube-proxy-nftables-deep-dive.md): `nftables`가 무엇인지와 현재 기준선에 넣지 않은 이유 정리
 - [K8S-009 kube-proxy ipvs 심화](K8S-009-kube-proxy-ipvs-deep-dive.md): `ipvs`가 무엇이었고 왜 비선정인지 정리
 - [K8S-010 eBPF Service 데이터플레인 메모](K8S-010-ebpf-service-dataplane-note.md): eBPF replacement를 현재 제외한 이유 정리
 
@@ -37,9 +37,9 @@ Kubernetes 관련 문서는 이 디렉터리에서 관리한다.
 12. [DR-010 Service 데이터플레인 전략 선정](../architecture/DR-010-kube-proxy-and-service-dataplane-strategy.md)
 13. [K8S-006 Service 데이터플레인 비교 연구](K8S-006-service-dataplane-comparison-study.md)
 14. [K8S-007 kube-proxy iptables 심화](K8S-007-kube-proxy-iptables-deep-dive.md)
-15. [K8S-008 kube-proxy nftables 심화](K8S-008-kube-proxy-nftables-deep-dive.md)
-16. [K8S-009 kube-proxy ipvs 심화](K8S-009-kube-proxy-ipvs-deep-dive.md)
-17. [K8S-010 eBPF Service 데이터플레인 메모](K8S-010-ebpf-service-dataplane-note.md)
+15. [K8S-009 kube-proxy ipvs 심화](K8S-009-kube-proxy-ipvs-deep-dive.md)
+16. [K8S-010 eBPF Service 데이터플레인 메모](K8S-010-ebpf-service-dataplane-note.md)
+17. 필요 시 [K8S-008 kube-proxy nftables 참고 메모](K8S-008-kube-proxy-nftables-deep-dive.md)
 18. 필요 시 `v3-kubernetes/docs` 참고 자료
 
 현재 기준으로 Kubernetes 네트워크 기준선은 아래 문서 묶음으로 확인하면 된다.
