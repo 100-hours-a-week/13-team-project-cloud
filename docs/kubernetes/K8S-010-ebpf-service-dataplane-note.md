@@ -33,7 +33,7 @@ eBPF replacement는 단순히 `kube-proxy` 구현 모드를 바꾸는 것이 아
 
 ## 3) 왜 `kube-proxy` 모드 변경과 성격이 다른가
 
-`iptables`와 `ipvs`는 모두 "`kube-proxy`가 어떻게 `Service ClusterIP`를 구현할 것인가"의 차이다.
+`iptables`와 `ipvs`는 모두 "`kube-proxy`가 `Service ClusterIP -> endpoint Pod` 전달 경로를 어떻게 구현할 것인가"의 차이다.
 
 반면 eBPF replacement는 보통 아래를 함께 바꾼다.
 
