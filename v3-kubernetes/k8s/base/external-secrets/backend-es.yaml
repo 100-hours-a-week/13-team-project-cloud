@@ -10,6 +10,6 @@ spec:
     name: backend-secret
   dataFrom:
     - find:
-        path: /moyeobab/dev/backend/
+        path: /moyeobab/spring/dev/
         name:
           regexp: ".*"
