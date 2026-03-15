@@ -47,7 +47,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.dev == 'true'
     runs-on: ubuntu-24.04-arm
-    # environment: develop
     steps:
       - uses: actions/checkout@v4
 
