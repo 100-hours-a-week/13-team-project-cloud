@@ -1,0 +1,21 @@
+# External Secrets Operator dev 환경 설정
+
+# Single replica (dev)
+replicaCount: 1
+
+# Webhook 비활성화 (dev에서는 불필요)
+webhook:
+  create: false
+
+# CertController 비활성화 (webhook 안 쓰므로)
+certController:
+  create: false
+
+# 리소스 제한
+# resources:
+#   requests:
+#     cpu: "50m"
+#     memory: "64Mi"
+#   limits:
+#     cpu: "100m"
+#     memory: "128Mi"

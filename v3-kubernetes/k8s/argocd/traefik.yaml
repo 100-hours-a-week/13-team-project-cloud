@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: "*"
+    helm:
+      valuesObject:
+        deployment:
+          kind: DaemonSet
+        service:
+          type: NodePort
+        ports:
+          web:
+            port: 8000
+            exposedPort: 80
+            nodePort: 30080
+          websecure:
+            expose:
+              default: false
+        providers:
+          kubernetesGateway:
+            enabled: true
+          kubernetesCRD:
+            enabled: true
+          kubernetesIngress:
+            enabled: true
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
