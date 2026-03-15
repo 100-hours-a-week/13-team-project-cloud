@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "ecr_readonly" {
 }
 
 resource "aws_iam_role_policy" "ssm_parameters" {
-  name = "${var.project}-${var.app_version}-${var.environment}-k8s-ssm-read"
+  name = "${var.project}-${var.app_version}-${var.environment}-k8s-ssm-params"
   role = aws_iam_role.k8s_node.id
 
   policy = jsonencode({
@@ -44,14 +44,41 @@ resource "aws_iam_role_policy" "ssm_parameters" {
         Action = [
           "ssm:GetParameter",
           "ssm:GetParameters",
-          "ssm:GetParametersByPath"
+          "ssm:GetParametersByPath",
+          "ssm:PutParameter"
         ]
         Resource = "arn:aws:ssm:${var.region}:${var.account_id}:parameter/moyeobab/*"
       },
       {
-        Effect   = "Allow"
-        Action   = "kms:Decrypt"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey"
+        ]
         Resource = "arn:aws:kms:${var.region}:${var.account_id}:key/*"
+      }
+    ]
+  })
+}
+
+# CP에서 ASG 스케일인 시 drain 스크립트가 사용하는 권한
+resource "aws_iam_role_policy" "drain_permissions" {
+  name = "${var.project}-${var.app_version}-${var.environment}-k8s-drain"
+  role = aws_iam_role.k8s_node.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "ec2:DescribeInstances"
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "autoscaling:CompleteLifecycleAction"
+        Resource = "arn:aws:autoscaling:${var.region}:${var.account_id}:autoScalingGroup:*"
       }
     ]
   })

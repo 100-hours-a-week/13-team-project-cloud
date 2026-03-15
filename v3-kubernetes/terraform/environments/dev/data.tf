@@ -11,26 +11,25 @@ data "aws_vpc" "existing" {
   }
 }
 
-# 기존 NAT Gateway (K8s 서브넷 라우팅에 재사용)
-data "aws_nat_gateways" "existing" {
+# 기존 App tier 서브넷 (K8s 노드를 동일 서브넷에 배치)
+data "aws_subnet" "app" {
   vpc_id = data.aws_vpc.existing.id
+
+  tags = {
+    Tier = "app"
+  }
 }
 
-data "aws_nat_gateway" "by_az" {
-  count = length(var.availability_zones)
-
-  filter {
-    name   = "state"
-    values = ["available"]
-  }
-
+# 기존 Public 서브넷 (NLB 배치용)
+data "aws_subnets" "public" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.existing.id]
   }
 
-  # NAT Gateway ID 목록에서 순서대로 참조
-  id = tolist(data.aws_nat_gateways.existing.ids)[count.index]
+  tags = {
+    Tier = "public"
+  }
 }
 
 # 기존 Data tier Security Group (K8s 노드 인바운드 규칙 추가 대상)

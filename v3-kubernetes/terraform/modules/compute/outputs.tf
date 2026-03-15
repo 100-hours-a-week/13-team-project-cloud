@@ -7,11 +7,3 @@ output "control_plane_instances" {
   }
 }
 
-output "worker_instances" {
-  value = {
-    for key, instance in aws_instance.worker : key => {
-      id         = instance.id
-      private_ip = instance.private_ip
-    }
-  }
-}

@@ -59,16 +59,16 @@ resource "aws_vpc_security_group_egress_rule" "k8s_cp_all" {
 # =============================================================================
 resource "aws_vpc_security_group_ingress_rule" "k8s_nlb_http" {
   security_group_id = aws_security_group.k8s_node.id
-  from_port         = 80
-  to_port           = 80
+  from_port         = 30080
+  to_port           = 30080
   ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "k8s_nlb_https" {
   security_group_id = aws_security_group.k8s_node.id
-  from_port         = 443
-  to_port           = 443
+  from_port         = 30443
+  to_port           = 30443
   ip_protocol       = "tcp"
   cidr_ipv4         = "0.0.0.0/0"
 }
