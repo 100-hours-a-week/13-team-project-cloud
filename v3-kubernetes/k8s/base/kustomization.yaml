@@ -9,6 +9,7 @@ resources:
   - backend/service.yaml
   - recommend/deployment.yaml
   - recommend/service.yaml
+  - gateway/gateway.yaml
   - gateway/httproute.yaml
   - external-secrets/secret-store.yaml
   - external-secrets/backend-es.yaml
