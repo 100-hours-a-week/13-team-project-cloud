@@ -1,0 +1,40 @@
+# ArgoCD dev 환경 설정
+# 리소스 절약을 위해 HA 비활성화
+
+# Single replica (dev)
+controller:
+  replicas: 1
+
+server:
+  replicas: 1
+  # NodePort로 접근 (NLB 없이 직접 접근용)
+  service:
+    type: NodePort
+    nodePortHttp: 30090
+    nodePortHttps: 30091
+
+# dev에서는 dex(SSO) 비활성화
+dex:
+  enabled: false
+
+# dev에서는 applicationSet 비활성화
+applicationSet:
+  enabled: false
+
+# dev에서는 notifications 비활성화
+notifications:
+  enabled: false
+
+# 리소스 제한
+# resources:
+#   requests:
+#     cpu: "100m"
+#     memory: "256Mi"
+#   limits:
+#     cpu: "300m"
+#     memory: "512Mi"
+
+configs:
+  params:
+    # insecure 모드 (TLS 종료는 Traefik/NLB에서)
+    server.insecure: true

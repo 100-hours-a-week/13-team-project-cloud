@@ -1,0 +1,43 @@
+# DaemonSet — 모든 worker 노드에 Traefik Pod 배치
+deployment:
+  kind: DaemonSet
+
+# NodePort — NLB는 Terraform으로 별도 관리
+service:
+  type: NodePort
+
+# 엔트리포인트 + NodePort 고정
+# TLS 종료는 NLB(ACM)에서 처리 — Traefik은 HTTP만 수신
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+    nodePort: 30080
+  websecure:
+    expose:
+      default: false
+
+# Gateway API 지원
+providers:
+  kubernetesGateway:
+    enabled: true
+  kubernetesCRD:
+    enabled: true
+  kubernetesIngress:
+    enabled: true
+
+# 리소스 제한 (dev)
+# resources:
+#   requests:
+#     cpu: "100m"
+#     memory: "128Mi"
+#   limits:
+#     cpu: "300m"
+#     memory: "256Mi"
+
+# 로그
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
