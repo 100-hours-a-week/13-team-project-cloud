@@ -5,10 +5,12 @@ metadata:
   namespace: argocd
 spec:
   project: default
+  # --- Helm chart 소스 ---
   source:
     repoURL: https://traefik.github.io/charts
     chart: traefik
     targetRevision: "*"
+    # --- Helm values (Traefik 설정) ---
     helm:
       valuesObject:
         deployment:
