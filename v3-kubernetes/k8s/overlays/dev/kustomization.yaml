@@ -13,11 +13,11 @@ patches:
 # CI에서 kustomize edit set image 로 태그 주입
 images:
   - name: moyeobab/backend
-    newName: ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-    newTag: latest
+    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+    newTag: sha-ca44b709eb503c2a8a0e1ddbd5c63c820c95f37c
   - name: moyeobab/recommend
-    newName: ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
-    newTag: latest
+    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
+    newTag: sha-c774472a44a6bc8fa1b9f249f5e8d64c0682bfb0
 
 configMapGenerator:
   - name: backend-config
