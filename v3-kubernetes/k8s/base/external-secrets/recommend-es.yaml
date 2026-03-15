@@ -1,0 +1,15 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: recommend-secret
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: aws-ssm
+  target:
+    name: recommend-secret
+  dataFrom:
+    - find:
+        path: /moyeobab/dev/recommend/
+        name:
+          regexp: ".*"

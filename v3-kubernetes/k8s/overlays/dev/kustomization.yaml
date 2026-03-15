@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: moyeobab
+
+resources:
+  - ../../base
+
+patches:
+  - path: patches/backend-resources.yaml
+  - path: patches/recommend-resources.yaml
+
+# CI에서 kustomize edit set image 로 태그 주입
+images:
+  - name: moyeobab/backend
+    newName: ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+    newTag: latest
+  - name: moyeobab/recommend
+    newName: ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
+    newTag: latest
+
+configMapGenerator:
+  - name: backend-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=dev
+      - AI_RECOMMENDATION_BASE_URL=http://recommend.moyeobab.svc.cluster.local:8000/api/v1
+  - name: recommend-config
+    literals:
+      - LOG_LEVEL=info
+      - QDRANT_TIMEOUT=5.0
+      - QDRANT_COLLECTION=meetup_requests
+      - MODEL_DIR=models
+
+# Secret은 ESO가 SSM Parameter Store에서 자동 생성
+# 경로: /moyeobab/dev/backend/*, /moyeobab/dev/recommend/*

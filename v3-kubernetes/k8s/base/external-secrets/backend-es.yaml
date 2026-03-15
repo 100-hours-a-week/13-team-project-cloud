@@ -1,0 +1,15 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: backend-secret
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: aws-ssm
+  target:
+    name: backend-secret
+  dataFrom:
+    - find:
+        path: /moyeobab/dev/backend/
+        name:
+          regexp: ".*"
