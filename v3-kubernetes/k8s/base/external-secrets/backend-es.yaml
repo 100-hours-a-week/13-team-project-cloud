@@ -13,3 +13,7 @@ spec:
         path: /moyeobab/spring/dev/
         name:
           regexp: ".*"
+      rewrite:
+        - regexp:
+            source: ".*/(.*)"
+            target: "$1"
