@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  # --- Discord 서비스 설정 ---
+  service.webhook.discord-deploy-dev: |
+    url: $discord-deploy-dev-webhook
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  # --- 알림 템플릿 ---
+  template.app-sync-succeeded: |
+    webhook:
+      discord-deploy-dev:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ [DEV] {{.app.metadata.name}} 배포 성공",
+              "description": "이미지 태그가 업데이트되어 ArgoCD가 자동 배포했습니다.",
+              "color": 3066993,
+              "fields": [
+                {"name": "앱", "value": "{{.app.metadata.name}}", "inline": true},
+                {"name": "상태", "value": "{{.app.status.sync.status}}", "inline": true},
+                {"name": "리비전", "value": "{{.app.status.sync.revision}}", "inline": true}
+              ],
+              "footer": {"text": "ArgoCD Notifications"}
+            }]
+          }
+
+  template.app-sync-failed: |
+    webhook:
+      discord-deploy-dev:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ [DEV] {{.app.metadata.name}} 배포 실패",
+              "description": "ArgoCD sync에 실패했습니다. 확인이 필요합니다.",
+              "color": 15158332,
+              "fields": [
+                {"name": "앱", "value": "{{.app.metadata.name}}", "inline": true},
+                {"name": "상태", "value": "{{.app.status.sync.status}}", "inline": true},
+                {"name": "리비전", "value": "{{.app.status.sync.revision}}", "inline": true}
+              ],
+              "footer": {"text": "ArgoCD Notifications"}
+            }]
+          }
+
+  template.app-health-degraded: |
+    webhook:
+      discord-deploy-dev:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ [DEV] {{.app.metadata.name}} 상태 이상",
+              "description": "앱 헬스 상태가 Degraded입니다.",
+              "color": 16776960,
+              "fields": [
+                {"name": "앱", "value": "{{.app.metadata.name}}", "inline": true},
+                {"name": "헬스", "value": "{{.app.status.health.status}}", "inline": true}
+              ],
+              "footer": {"text": "ArgoCD Notifications"}
+            }]
+          }
+
+  # --- 트리거 설정 ---
+  trigger.on-sync-succeeded: |
+    - when: app.status.operationState.phase in ['Succeeded']
+      send: [app-sync-succeeded]
+
+  trigger.on-sync-failed: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      send: [app-sync-failed]
+
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      send: [app-health-degraded]
