@@ -15,3 +15,9 @@ variable "https_node_port" {
   type    = number
   default = 30443
 }
+
+variable "acm_certificate_arn" {
+  description = "ACM 인증서 ARN (TLS 종료용)"
+  type        = string
+  default     = ""
+}

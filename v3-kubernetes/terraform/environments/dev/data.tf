@@ -40,3 +40,9 @@ data "aws_security_group" "data" {
     Tier = "data"
   }
 }
+
+# ACM 인증서 (dev/prod 공용 — 관리하지 않고 참조만)
+data "aws_acm_certificate" "main" {
+  domain   = "moyeobab.com"
+  statuses = ["ISSUED"]
+}
