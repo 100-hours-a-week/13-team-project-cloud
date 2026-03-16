@@ -63,8 +63,9 @@ module "nlb" {
   app_version = local.version
   common_tags = local.common_tags
 
-  vpc_id            = data.aws_vpc.existing.id
-  public_subnet_ids = data.aws_subnets.public.ids
+  vpc_id              = data.aws_vpc.existing.id
+  public_subnet_ids   = data.aws_subnets.public.ids
+  acm_certificate_arn = data.aws_acm_certificate.main.arn
 }
 
 # =============================================================================
@@ -99,7 +100,6 @@ module "asg" {
 
   target_group_arns = [
     module.nlb.http_target_group_arn,
-    module.nlb.https_target_group_arn,
   ]
 
   desired_capacity = var.wp_asg_desired

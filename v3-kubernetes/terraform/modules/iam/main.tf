@@ -84,6 +84,28 @@ resource "aws_iam_role_policy" "drain_permissions" {
   })
 }
 
+# S3 접근 권한 (presign URL 생성 + 채팅 이미지)
+resource "aws_iam_role_policy" "s3_access" {
+  name = "${var.project}-${var.app_version}-${var.environment}-k8s-s3"
+  role = aws_iam_role.k8s_node.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ]
+      Resource = [
+        "arn:aws:s3:::${var.project}-${var.environment}-receipt-images/*",
+        "arn:aws:s3:::${var.project}-${var.environment}-chat-images/*"
+      ]
+    }]
+  })
+}
+
 resource "aws_iam_instance_profile" "k8s_node" {
   name = "${var.project}-${var.app_version}-${var.environment}-k8s-node-profile"
   role = aws_iam_role.k8s_node.name

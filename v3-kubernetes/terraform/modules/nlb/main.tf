@@ -39,32 +39,6 @@ resource "aws_lb_target_group" "http" {
   })
 }
 
-# =============================================================================
-# Target Group — Worker NodePort (HTTPS)
-# =============================================================================
-resource "aws_lb_target_group" "https" {
-  name_prefix = "k8htps"
-  port        = var.https_node_port
-  protocol    = "TCP"
-  vpc_id      = var.vpc_id
-  target_type = "instance"
-
-  health_check {
-    protocol            = "TCP"
-    port                = var.https_node_port
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
-    interval            = 30
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = merge(var.common_tags, {
-    Name = "${var.project}-${var.environment}-${var.app_version}-k8s-https-tg"
-  })
-}
 
 # =============================================================================
 # Listener — 80 → HTTP Target Group
@@ -81,16 +55,18 @@ resource "aws_lb_listener" "http" {
 }
 
 # =============================================================================
-# Listener — 443 → HTTPS Target Group
+# Listener — 443 (TLS) → HTTP Target Group (ACM에서 TLS 종료)
 # =============================================================================
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.k8s.arn
   port              = 443
-  protocol          = "TCP"
+  protocol          = "TLS"
+  certificate_arn   = var.acm_certificate_arn
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.https.arn
+    target_group_arn = aws_lb_target_group.http.arn
   }
 }
 
