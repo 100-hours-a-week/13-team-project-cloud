@@ -35,6 +35,8 @@ spec:
                 selector:
                   matchLabels:
                     kubernetes.io/metadata.name: moyeobab
+        api:
+          insecure: true
         providers:
           kubernetesGateway:
             enabled: true
