@@ -4,32 +4,29 @@ kind: Kustomization
 namespace: moyeobab
 
 resources:
-  - ../../base
+- ../../base
 
 patches:
-  - path: patches/backend-resources.yaml
-  - path: patches/recommend-resources.yaml
+- path: patches/backend-resources.yaml
+- path: patches/recommend-resources.yaml
 
 # CI에서 kustomize edit set image 로 태그 주입
 images:
-  - name: moyeobab/backend
-    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-    newTag: sha-ca44b709eb503c2a8a0e1ddbd5c63c820c95f37c
-  - name: moyeobab/recommend
-    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
-    newTag: sha-c774472a44a6bc8fa1b9f249f5e8d64c0682bfb0
+- name: moyeobab/backend
+  newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+  newTag: sha-5dae3227
+- name: moyeobab/recommend
+  newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
+  newTag: sha-c774472a44a6bc8fa1b9f249f5e8d64c0682bfb0
 
 configMapGenerator:
-  - name: backend-config
-    literals:
-      - SPRING_PROFILES_ACTIVE=dev
-      - AI_RECOMMENDATION_BASE_URL=http://recommend.moyeobab.svc.cluster.local:8000/api/v1
-  - name: recommend-config
-    literals:
-      - LOG_LEVEL=info
-      - QDRANT_TIMEOUT=5.0
-      - QDRANT_COLLECTION=meetup_requests
-      - MODEL_DIR=models
-
-# Secret은 ESO가 SSM Parameter Store에서 자동 생성
-# 경로: /moyeobab/dev/backend/*, /moyeobab/dev/recommend/*
+- literals:
+  - SPRING_PROFILES_ACTIVE=dev
+  - AI_RECOMMENDATION_BASE_URL=http://recommend.moyeobab.svc.cluster.local:8000/api/v1
+  name: backend-config
+- literals:
+  - LOG_LEVEL=info
+  - QDRANT_TIMEOUT=5.0
+  - QDRANT_COLLECTION=meetup_requests
+  - MODEL_DIR=models
+  name: recommend-config
