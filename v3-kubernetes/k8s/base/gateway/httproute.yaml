@@ -7,27 +7,26 @@ spec:
     - name: traefik-gateway
       namespace: traefik
   rules:
-    # /api/v2/ws → backend WebSocket (recommend보다 먼저 매칭)
+    # recommend는 ClusterIP로 내부 통신만 (외부 노출 불필요)
+    # /actuator/prometheus, /swagger-ui, /v3/api-docs 등은 라우팅 없음 → 404
     - matches:
         - path:
             type: PathPrefix
-            value: /api/v2/ws
+            value: /api
       backendRefs:
         - name: backend
           port: 8080
-    # /api/v2 → recommend 서비스
     - matches:
         - path:
             type: PathPrefix
-            value: /api/v2
+            value: /actuator/health
       backendRefs:
-        - name: recommend
-          port: 8000
-    # 나머지 → backend 서비스
+        - name: backend
+          port: 8080
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /stomp
       backendRefs:
         - name: backend
           port: 8080
