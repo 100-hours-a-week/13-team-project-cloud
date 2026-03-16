@@ -17,7 +17,7 @@ images:
   newTag: sha-5dae3227
 - name: moyeobab/recommend
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
-  newTag: sha-c774472a44a6bc8fa1b9f249f5e8d64c0682bfb0
+  newTag: sha-b2705c44
 
 configMapGenerator:
 - literals:
