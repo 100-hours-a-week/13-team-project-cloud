@@ -7,8 +7,6 @@ spec:
     - name: traefik-gateway
       namespace: traefik
   rules:
-    # recommend는 ClusterIP로 내부 통신만 (외부 노출 불필요)
-    # /actuator/prometheus, /swagger-ui, /v3/api-docs 등은 라우팅 없음 → 404
     - matches:
         - path:
             type: PathPrefix

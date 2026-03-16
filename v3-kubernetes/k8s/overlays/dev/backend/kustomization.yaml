@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/backend
+
+patches:
+  - path: patches/resources.yaml
+
+images:
+  - name: moyeobab/backend
+    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+    newTag: sha-5dae3227
+
+configMapGenerator:
+  - name: backend-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=dev
+      - AI_RECOMMENDATION_BASE_URL=http://recommend.moyeobab.svc.cluster.local:8000/api/v2
+
+generatorOptions:
+  disableNameSuffixHash: true

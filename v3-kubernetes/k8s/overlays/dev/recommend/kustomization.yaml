@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/recommend
+
+patches:
+  - path: patches/resources.yaml
+
+images:
+  - name: moyeobab/recommend
+    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
+    newTag: sha-c774472a
+
+configMapGenerator:
+  - name: recommend-config
+    literals:
+      - LOG_LEVEL=info
+      - QDRANT_TIMEOUT=5.0
+      - QDRANT_COLLECTION=meetup_requests
+      - MODEL_DIR=models
+
+generatorOptions:
+  disableNameSuffixHash: true
