@@ -92,7 +92,7 @@ module "asg" {
   ec2_ami_id            = var.ec2_ami_id
   instance_type         = var.wp_instance_type
   instance_profile_name = module.iam.k8s_node_instance_profile_name
-  subnet_id             = data.aws_subnet.app.id
+  subnet_ids            = [data.aws_subnet.app.id]
   k8s_node_sg_id        = module.security.k8s_node_sg_id
   deploy_env            = local.environment
   region                = var.region
