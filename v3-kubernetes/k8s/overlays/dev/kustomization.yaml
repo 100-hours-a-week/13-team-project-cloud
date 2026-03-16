@@ -14,7 +14,7 @@ patches:
 images:
 - name: moyeobab/backend
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-  newTag: sha-45e11615
+  newTag: sha-5dae3227
 - name: moyeobab/recommend
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
   newTag: sha-c774472a44a6bc8fa1b9f249f5e8d64c0682bfb0
