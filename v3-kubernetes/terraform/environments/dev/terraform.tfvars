@@ -1,4 +1,4 @@
-ec2_ami_id = "ami-0798df96314fa813f"
+ec2_ami_id = "ami-04b47c7d72b84efef"
 
 # K8s API Server 접근 허용 CIDR (관리자 IP, Bastion 등)
 # admin_cidr_blocks = ["x.x.x.x/32"]

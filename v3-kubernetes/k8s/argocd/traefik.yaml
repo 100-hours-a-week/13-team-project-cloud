@@ -25,6 +25,12 @@ spec:
           websecure:
             expose:
               default: false
+        gateway:
+          listeners:
+            web:
+              port: 8000
+              protocol: HTTP
+              namespacePolicy: All
         providers:
           kubernetesGateway:
             enabled: true
