@@ -30,7 +30,11 @@ spec:
             web:
               port: 8000
               protocol: HTTP
-              namespacePolicy: All
+              namespacePolicy:
+                from: Selector
+                selector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: moyeobab
         providers:
           kubernetesGateway:
             enabled: true
