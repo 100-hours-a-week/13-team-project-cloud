@@ -66,7 +66,7 @@ else
     --set server.service.nodePortHttps=30091 \
     --set dex.enabled=false \
     --set applicationSet.enabled=false \
-    --set notifications.enabled=false \
+    --set notifications.enabled=true \
     --set 'configs.params.server\.insecure=true'
 fi
 
