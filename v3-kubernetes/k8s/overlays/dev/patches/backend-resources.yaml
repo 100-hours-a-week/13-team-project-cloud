@@ -13,5 +13,5 @@ spec:
               cpu: 200m
               memory: 512Mi
             limits:
-              cpu: 500m
+              # cpu: 500m  # dev: burst 허용으로 Spring Boot 시작 시간 단축
               memory: 768Mi
