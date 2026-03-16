@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: recommend-prod
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.discord-deploy-prod: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.discord-deploy-prod: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.discord-deploy-prod: ""
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:100-hours-a-week/13-team-project-cloud.git
+    path: v3-kubernetes/k8s/overlays/prod/recommend
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: moyeobab
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
