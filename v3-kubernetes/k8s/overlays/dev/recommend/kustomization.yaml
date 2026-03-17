@@ -11,7 +11,7 @@ patches:
 images:
 - name: moyeobab/recommend
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/recommend
-  newTag: sha-80f95988
+  newTag: sha-424e0a52
 
 configMapGenerator:
 - literals:
