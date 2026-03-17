@@ -24,9 +24,6 @@ spec:
                 name: backend-config
             - secretRef:
                 name: backend-secret
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: dev
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
