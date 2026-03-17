@@ -41,13 +41,14 @@ module "compute" {
 
   ec2_ami_id            = var.ec2_ami_id
   instance_profile_name = module.iam.k8s_node_instance_profile_name
-  subnet_id             = data.aws_subnet.app.id
+  subnet_id             = data.aws_subnet.app_primary.id
   k8s_node_sg_id        = module.security.k8s_node_sg_id
   k8s_cp_sg_id          = module.security.k8s_cp_sg_id
 
   cp_instances = {
-    cp-1 = {
-      private_ip = "10.1.1.100"
+    cp = {
+      private_ip    = "10.0.1.100"
+      instance_type = var.cp_instance_type
     }
   }
 }
@@ -69,17 +70,7 @@ module "nlb" {
 }
 
 # =============================================================================
-# ECR — 환경 공통 컨테이너 레지스트리 (Build Once, Deploy Everywhere)
-# =============================================================================
-module "ecr" {
-  source = "../../modules/ecr"
-
-  project     = local.project
-  common_tags = local.common_tags
-}
-
-# =============================================================================
-# ASG — Worker 노드 오토스케일링 (NLB 타겟그룹 자동 등록)
+# ASG — Worker 노드 오토스케일링 (멀티 AZ, NLB 타겟그룹 자동 등록)
 # =============================================================================
 module "asg" {
   source = "../../modules/asg"
@@ -92,7 +83,7 @@ module "asg" {
   ec2_ami_id            = var.ec2_ami_id
   instance_type         = var.wp_instance_type
   instance_profile_name = module.iam.k8s_node_instance_profile_name
-  subnet_ids            = [data.aws_subnet.app.id]
+  subnet_ids            = data.aws_subnets.app.ids
   k8s_node_sg_id        = module.security.k8s_node_sg_id
   deploy_env            = local.environment
   region                = var.region

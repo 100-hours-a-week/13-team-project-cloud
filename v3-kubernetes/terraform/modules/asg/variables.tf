@@ -7,7 +7,10 @@ variable "ec2_ami_id"            { type = string }
 variable "instance_type"         { type = string }
 variable "instance_profile_name" { type = string }
 
-variable "subnet_id"      { type = string }
+variable "subnet_ids" {
+  description = "ASG가 인스턴스를 배치할 서브넷 ID 목록 (멀티 AZ 지원)"
+  type        = list(string)
+}
 variable "k8s_node_sg_id" { type = string }
 variable "region"         { type = string }
 variable "account_id"     { type = string }

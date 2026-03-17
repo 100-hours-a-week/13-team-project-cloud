@@ -6,6 +6,7 @@ resources:
 
 patches:
 - path: patches/resources.yaml
+- path: patches/external-secret.yaml
 
 images:
 - name: moyeobab/recommend

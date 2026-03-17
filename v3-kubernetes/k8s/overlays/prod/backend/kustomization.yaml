@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/backend
+
+patches:
+  - path: patches/resources.yaml
+  - path: patches/external-secret.yaml
+
+images:
+  - name: moyeobab/backend
+    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+    newTag: sha-5dae3227
+
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+      - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2

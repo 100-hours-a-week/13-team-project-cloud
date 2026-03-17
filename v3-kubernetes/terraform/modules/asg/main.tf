@@ -55,7 +55,7 @@ resource "aws_autoscaling_group" "wp" {
     version = "$Latest"
   }
 
-  vpc_zone_identifier = [var.subnet_id]
+  vpc_zone_identifier = var.subnet_ids
 
   desired_capacity = var.desired_capacity
   min_size         = var.min_size
