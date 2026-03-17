@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: chatbot
 spec:
-  replicas: 0  # AI 팀 코드 수정 전까지 비활성화
+  replicas: 1  # AI 팀 코드 수정 전까지 비활성화
   template:
     spec:
       containers:
