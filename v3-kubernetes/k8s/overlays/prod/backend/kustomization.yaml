@@ -15,7 +15,9 @@ images:
 
 configMapGenerator:
   - name: backend-config
-    behavior: merge
     literals:
       - SPRING_PROFILES_ACTIVE=prod
       - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2
+
+generatorOptions:
+  disableNameSuffixHash: true

@@ -15,8 +15,10 @@ images:
 
 configMapGenerator:
   - name: recommend-config
-    behavior: merge
     literals:
       - LOG_LEVEL=WARNING
       - QDRANT_TIMEOUT=5.0
       - QDRANT_COLLECTION=meetup_requests
+
+generatorOptions:
+  disableNameSuffixHash: true
