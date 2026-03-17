@@ -22,8 +22,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: chatbot-config
-            # - secretRef:
-            #     name: chatbot-secret
+            - secretRef:
+                name: chatbot-secret
           startupProbe:
             httpGet:
               path: /health
