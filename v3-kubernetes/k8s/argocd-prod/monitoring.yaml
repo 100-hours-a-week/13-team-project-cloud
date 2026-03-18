@@ -15,6 +15,7 @@ spec:
         grafana:
           admin:
             existingSecret: alertmanager-discord-webhooks # pragma: allowlist secret
+            userKey: GRAFANA_ADMIN_USER # pragma: allowlist secret
             passwordKey: GRAFANA_ADMIN_PASSWORD # pragma: allowlist secret
           resources:
             requests:
