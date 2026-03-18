@@ -21,6 +21,12 @@ spec:
             annotations:
               tailscale.com/expose: "true"
               tailscale.com/hostname: "grafana"
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false
           resources:
             requests:
               cpu: 100m
