@@ -108,3 +108,20 @@ resource "aws_vpc_security_group_ingress_rule" "data_qdrant_from_k8s" {
   ip_protocol                  = "tcp"
   referenced_security_group_id = aws_security_group.k8s_node.id
 }
+
+# Exporter 메트릭 스크랩 (Prometheus → EC2 Data Layer)
+resource "aws_vpc_security_group_ingress_rule" "data_postgres_exporter_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 9187
+  to_port                      = 9187
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "data_redis_exporter_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 9121
+  to_port                      = 9121
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}

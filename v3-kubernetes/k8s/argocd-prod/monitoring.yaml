@@ -1,0 +1,253 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: "*"
+    helm:
+      valuesObject:
+        # ===== Grafana =====
+        grafana:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+
+        # ===== Prometheus =====
+        prometheus:
+          prometheusSpec:
+            retention: 15d
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+            # 클러스터 내 모든 ServiceMonitor/PodMonitor 수집
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            # EC2 Data Layer exporter 스크랩
+            additionalScrapeConfigs:
+              - job_name: 'prod-postgres-exporter'
+                static_configs:
+                  - targets: ['10.0.7.10:9187']
+                    labels:
+                      instance: 'prod-postgresql'
+                  - targets: ['10.0.2.174:9187']
+                    labels:
+                      instance: 'prod-postgresql-standby'
+              - job_name: 'prod-redis-exporter'
+                static_configs:
+                  - targets: ['10.0.2.240:9121']
+                    labels:
+                      instance: 'prod-redis'
+
+        # ===== AlertManager =====
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+          config:
+            global:
+              resolve_timeout: 5m
+            route:
+              group_by: ['alertname', 'job']
+              group_wait: 15s
+              group_interval: 5m
+              repeat_interval: 1h
+              receiver: 'warning'
+              routes:
+                - match:
+                    severity: critical
+                  receiver: 'critical'
+            receivers:
+              - name: 'critical'
+                discord_configs:
+                  # TODO: webhook URL을 SSM → ExternalSecret으로 분리
+                  - webhook_url: 'https://discord.com/api/webhooks/1474595043015786758/tTCeajJgQzl7aIQ-RaCozTDDhkUd_mt8T84yiKZebA0v-tYtxt28O-2gbcjtygFVLt9L'
+                    send_resolved: true
+                    title: '{{ if eq .Status "firing" }}🚨 [CRITICAL] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
+                    content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
+              - name: 'warning'
+                discord_configs:
+                  - webhook_url: 'https://discord.com/api/webhooks/1474595214047051827/GvAZ2rFxEqRgCgYd2mqXSeBpeI0MGBDysvpVzVGLuYk0HbtSFJVZqALavtWZm4VThT_m'
+                    send_resolved: true
+                    title: '{{ if eq .Status "firing" }}⚠️ [WARNING] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
+                    content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
+
+        # ===== Alert Rules =====
+        additionalPrometheusRulesMap:
+          moyeobab-alerts:
+            groups:
+              # --- 가용성 ---
+              - name: availability
+                rules:
+                  - alert: InstanceDown
+                    expr: up == 0
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "인스턴스 다운 ({{ $labels.instance }})"
+                      description: "{{ $labels.job }} 인스턴스가 1분 이상 응답하지 않습니다."
+
+                  - alert: RedisDown
+                    expr: redis_up == 0
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "Redis 다운"
+                      description: "Redis 인스턴스가 응답하지 않습니다. 즉시 확인 필요."
+
+                  - alert: PostgreSQLDown
+                    expr: pg_up == 0
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "PostgreSQL 다운"
+                      description: "PostgreSQL 인스턴스가 응답하지 않습니다. 즉시 확인 필요."
+
+              # --- 성능 (Spring Boot 3 Micrometer 메트릭 기준) ---
+              - name: performance
+                rules:
+                  - alert: HighResponseTime
+                    expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{namespace="moyeobab"}[5m])) > 0.5
+                    for: 1m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "API 응답 지연 ({{ $labels.instance }})"
+                      description: "P95 응답시간이 {{ $value | printf \"%.2f\" }}초 입니다."
+
+                  - alert: CriticalResponseTime
+                    expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{namespace="moyeobab"}[5m])) > 2
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "API 응답 심각한 지연 ({{ $labels.instance }})"
+                      description: "P95 응답시간이 {{ $value | printf \"%.2f\" }}초 입니다. 즉시 확인 필요."
+
+              # --- 에러율 (Spring Boot 3 Micrometer 메트릭 기준) ---
+              - name: error_rate
+                rules:
+                  - alert: HighErrorRate
+                    expr: rate(http_server_requests_seconds_count{namespace="moyeobab", status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{namespace="moyeobab"}[5m]) * 100 > 1
+                    for: 3m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "5xx 에러율 높음"
+                      description: "에러율이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+                  - alert: CriticalErrorRate
+                    expr: rate(http_server_requests_seconds_count{namespace="moyeobab", status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{namespace="moyeobab"}[5m]) * 100 > 5
+                    for: 2m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "5xx 에러율 심각"
+                      description: "에러율이 {{ $value | printf \"%.1f\" }}% 입니다. 롤백 검토 필요."
+
+              # --- 품질 ---
+              - name: quality
+                rules:
+                  - alert: EmptyRecommendResult
+                    expr: increase(recommend_empty_result_total{namespace="moyeobab"}[5m]) > 10
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "추천 결과 빈 응답 증가"
+                      description: "5분간 빈 추천 결과가 {{ $value }}건 발생했습니다."
+
+              # --- 리소스 (node-exporter 메트릭) ---
+              - name: resource
+                rules:
+                  - alert: HighCPUUsage
+                    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "CPU 사용률 높음 ({{ $labels.instance }})"
+                      description: "CPU 사용률이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+                  - alert: HighMemoryUsage
+                    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "메모리 사용률 높음 ({{ $labels.instance }})"
+                      description: "메모리 사용률이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+                  - alert: HighDiskUsage
+                    expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+                    for: 5m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "디스크 사용률 높음 ({{ $labels.instance }})"
+                      description: "디스크 사용률이 {{ $value | printf \"%.1f\" }}% 입니다. 로그 정리 필요."
+
+                  - alert: PostgreSQLHighConnections
+                    expr: sum(pg_stat_activity_count) / pg_settings_max_connections * 100 > 80
+                    for: 5m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "PostgreSQL 커넥션 풀 고갈 위험"
+                      description: "커넥션 사용률이 {{ $value | printf \"%.1f\" }}% 입니다. 커넥션 누수 확인 필요."
+
+                  - alert: RedisHighMemory
+                    expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "Redis 메모리 사용률 높음"
+                      description: "Redis 메모리 사용률이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+        # ===== kubeadm 환경 — CP 컴포넌트 스크랩 불가 =====
+        kubeEtcd:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeControllerManager:
+          enabled: false
+        kubeProxy:
+          enabled: false
+
+        # ===== 노드/클러스터 메트릭 =====
+        nodeExporter:
+          enabled: true
+        kube-state-metrics:
+          enabled: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
