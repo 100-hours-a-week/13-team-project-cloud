@@ -13,6 +13,9 @@ spec:
       valuesObject:
         # ===== Grafana =====
         grafana:
+          admin:
+            existingSecret: alertmanager-discord-webhooks # pragma: allowlist secret
+            passwordKey: GRAFANA_ADMIN_PASSWORD # pragma: allowlist secret
           resources:
             requests:
               cpu: 100m
