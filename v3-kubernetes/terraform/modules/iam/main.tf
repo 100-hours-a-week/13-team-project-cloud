@@ -106,6 +106,12 @@ resource "aws_iam_role_policy" "s3_access" {
   })
 }
 
+# EBS CSI Driver — EBS 볼륨 동적 프로비저닝 (Prometheus PVC 등)
+resource "aws_iam_role_policy_attachment" "ebs_csi" {
+  role       = aws_iam_role.k8s_node.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
 resource "aws_iam_instance_profile" "k8s_node" {
   name = "${var.project}-${var.app_version}-${var.environment}-k8s-node-profile"
   role = aws_iam_role.k8s_node.name

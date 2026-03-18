@@ -1,22 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: common-prod
+  name: tailscale
   namespace: argocd
-  annotations:
-    notifications.argoproj.io/subscribe.on-sync-failed.discord-deploy-prod: ""
 spec:
   project: default
   source:
-    repoURL: git@github.com:100-hours-a-week/13-team-project-cloud.git
-    path: v3-kubernetes/k8s/overlays/prod/common
-    targetRevision: main
+    repoURL: https://pkgs.tailscale.com/helmcharts
+    chart: tailscale-operator
+    targetRevision: "*"
+    helm:
+      valuesObject:
+        operatorConfig:
+          hostname: "moyeobab-k8s-operator"
   destination:
     server: https://kubernetes.default.svc
-    namespace: moyeobab
+    namespace: tailscale-system
   syncPolicy:
     automated:
       selfHeal: true
       prune: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
