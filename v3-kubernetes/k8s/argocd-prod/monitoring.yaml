@@ -32,6 +32,7 @@ spec:
         # ===== Prometheus =====
         prometheus:
           prometheusSpec:
+            secrets: ['monitoring-secrets']
             retention: 15d
             resources:
               requests:
@@ -129,6 +130,8 @@ spec:
                       - name: instance-state-name
                         values: [running]
                 metrics_path: /metrics
+                authorization:
+                  credentials_file: /etc/prometheus/secrets/monitoring-secrets/QDRANT_API_KEY
                 relabel_configs:
                   - source_labels: [__meta_ec2_tag_Name]
                     target_label: instance
