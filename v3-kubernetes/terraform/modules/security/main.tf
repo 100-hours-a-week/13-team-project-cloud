@@ -125,3 +125,11 @@ resource "aws_vpc_security_group_ingress_rule" "data_redis_exporter_from_k8s" {
   ip_protocol                  = "tcp"
   referenced_security_group_id = aws_security_group.k8s_node.id
 }
+
+resource "aws_vpc_security_group_ingress_rule" "data_node_exporter_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 9100
+  to_port                      = 9100
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
