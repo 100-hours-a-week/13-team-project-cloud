@@ -13,6 +13,9 @@ spec:
       valuesObject:
         # ===== Grafana =====
         grafana:
+          admin:
+            existingSecret: alertmanager-discord-webhooks # pragma: allowlist secret
+            passwordKey: GRAFANA_ADMIN_PASSWORD # pragma: allowlist secret
           resources:
             requests:
               cpu: 100m
@@ -35,21 +38,50 @@ spec:
             # 클러스터 내 모든 ServiceMonitor/PodMonitor 수집
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
-            # EC2 Data Layer exporter 스크랩
+            # EC2 Data Layer exporter 스크랩 (태그 기반 서비스 디스커버리)
             additionalScrapeConfigs:
               - job_name: 'prod-postgres-exporter'
-                static_configs:
-                  - targets: ['10.0.7.10:9187']
-                    labels:
-                      instance: 'prod-postgresql'
-                  - targets: ['10.0.2.174:9187']
-                    labels:
-                      instance: 'prod-postgresql-standby'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 9187
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [postgresql]
+                      - name: instance-state-name
+                        values: [running]
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    regex: '.*-(primary|standby)$'
+                    target_label: role
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
               - job_name: 'prod-redis-exporter'
-                static_configs:
-                  - targets: ['10.0.2.240:9121']
-                    labels:
-                      instance: 'prod-redis'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 9121
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [redis]
+                      - name: instance-state-name
+                        values: [running]
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    regex: '.*-(primary|standby)$'
+                    target_label: role
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
 
         # ===== AlertManager =====
         alertmanager:
@@ -61,6 +93,8 @@ spec:
               limits:
                 cpu: 100m
                 memory: 128Mi
+            # ExternalSecret으로 생성된 Secret을 Pod에 마운트
+            secrets: ['alertmanager-discord-webhooks']
           config:
             global:
               resolve_timeout: 5m
@@ -77,14 +111,13 @@ spec:
             receivers:
               - name: 'critical'
                 discord_configs:
-                  # TODO: webhook URL을 SSM → ExternalSecret으로 분리
-                  - webhook_url: 'https://discord.com/api/webhooks/1474595043015786758/tTCeajJgQzl7aIQ-RaCozTDDhkUd_mt8T84yiKZebA0v-tYtxt28O-2gbcjtygFVLt9L'
+                  - webhook_url_file: '/etc/alertmanager/secrets/alertmanager-discord-webhooks/DISCORD_WEBHOOK_CRITICAL' # pragma: allowlist secret
                     send_resolved: true
                     title: '{{ if eq .Status "firing" }}🚨 [CRITICAL] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
                     content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
               - name: 'warning'
                 discord_configs:
-                  - webhook_url: 'https://discord.com/api/webhooks/1474595214047051827/GvAZ2rFxEqRgCgYd2mqXSeBpeI0MGBDysvpVzVGLuYk0HbtSFJVZqALavtWZm4VThT_m'
+                  - webhook_url_file: '/etc/alertmanager/secrets/alertmanager-discord-webhooks/DISCORD_WEBHOOK_WARNING' # pragma: allowlist secret
                     send_resolved: true
                     title: '{{ if eq .Status "firing" }}⚠️ [WARNING] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
                     content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
