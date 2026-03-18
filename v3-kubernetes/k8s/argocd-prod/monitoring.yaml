@@ -17,6 +17,10 @@ spec:
             existingSecret: monitoring-secrets # pragma: allowlist secret
             userKey: GRAFANA_ADMIN_USER # pragma: allowlist secret
             passwordKey: GRAFANA_ADMIN_PASSWORD # pragma: allowlist secret
+          service:
+            annotations:
+              tailscale.com/expose: "true"
+              tailscale.com/hostname: "grafana"
           resources:
             requests:
               cpu: 100m

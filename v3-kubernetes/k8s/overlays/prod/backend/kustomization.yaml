@@ -7,6 +7,7 @@ resources:
 patches:
   - path: patches/resources.yaml
   - path: patches/external-secret.yaml
+  - path: patches/service.yaml
 
 images:
   - name: moyeobab/backend

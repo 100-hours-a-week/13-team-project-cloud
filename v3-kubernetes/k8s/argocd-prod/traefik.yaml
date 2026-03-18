@@ -15,6 +15,9 @@ spec:
           kind: DaemonSet
         service:
           type: NodePort
+          annotations:
+            tailscale.com/expose: "true"
+            tailscale.com/hostname: "traefik"
         ports:
           web:
             port: 8000
