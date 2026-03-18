@@ -44,6 +44,9 @@ spec:
       kind: CSIDriver
       jqPathExpressions:
         - .spec.storageCapacity
+        - .spec.nodeAllocatableUpdatePeriodSeconds
+        - .spec.requiresRepublish
+        - .spec.seLinuxMount
     - group: ""
       kind: ConfigMap
       jqPathExpressions:
