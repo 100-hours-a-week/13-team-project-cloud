@@ -15,9 +15,6 @@ spec:
           kind: DaemonSet
         service:
           type: NodePort
-          annotations:
-            tailscale.com/expose: "true"
-            tailscale.com/hostname: "traefik"
         ports:
           web:
             port: 8000
@@ -26,6 +23,14 @@ spec:
           websecure:
             expose:
               default: false
+          traefik:
+            port: 9000
+            expose:
+              default: true
+            exposedPort: 9000
+        api:
+          dashboard: true
+          insecure: true
         gateway:
           listeners:
             web:
