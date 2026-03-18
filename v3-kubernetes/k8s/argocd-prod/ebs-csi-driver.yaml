@@ -39,9 +39,19 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
+  ignoreDifferences:
+    - group: storage.k8s.io
+      kind: CSIDriver
+      jqPathExpressions:
+        - .spec.storageCapacity
+    - group: ""
+      kind: ConfigMap
+      jqPathExpressions:
+        - .data
   syncPolicy:
     automated:
       selfHeal: true
       prune: true
     syncOptions:
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
