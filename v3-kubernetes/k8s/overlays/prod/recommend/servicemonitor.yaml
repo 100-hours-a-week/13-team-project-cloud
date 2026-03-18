@@ -1,12 +1,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: chatbot
+  name: recommend
 spec:
   selector:
     matchLabels:
-      app: chatbot
+      app: recommend
   endpoints:
-    - port: "8000"
+    - port: http
       path: /metrics
       interval: 15s

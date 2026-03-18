@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../../base/chatbot
+  - servicemonitor.yaml
 
 patches:
   - path: patches/resources.yaml
