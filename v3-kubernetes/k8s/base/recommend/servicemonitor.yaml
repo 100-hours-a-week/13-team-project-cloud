@@ -1,0 +1,12 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: recommend
+spec:
+  selector:
+    matchLabels:
+      app: recommend
+  endpoints:
+    - port: "8000"
+      path: /metrics
+      interval: 15s
