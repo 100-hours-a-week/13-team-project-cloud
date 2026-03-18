@@ -61,6 +61,8 @@ spec:
               limits:
                 cpu: 100m
                 memory: 128Mi
+            # ExternalSecret으로 생성된 Secret을 Pod에 마운트
+            secrets: ['alertmanager-discord-webhooks']
           config:
             global:
               resolve_timeout: 5m
@@ -77,14 +79,13 @@ spec:
             receivers:
               - name: 'critical'
                 discord_configs:
-                  # TODO: webhook URL을 SSM → ExternalSecret으로 분리
-                  - webhook_url: 'https://discord.com/api/webhooks/1474595043015786758/tTCeajJgQzl7aIQ-RaCozTDDhkUd_mt8T84yiKZebA0v-tYtxt28O-2gbcjtygFVLt9L'
+                  - webhook_url_file: '/etc/alertmanager/secrets/alertmanager-discord-webhooks/DISCORD_WEBHOOK_CRITICAL' # pragma: allowlist secret
                     send_resolved: true
                     title: '{{ if eq .Status "firing" }}🚨 [CRITICAL] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
                     content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
               - name: 'warning'
                 discord_configs:
-                  - webhook_url: 'https://discord.com/api/webhooks/1474595214047051827/GvAZ2rFxEqRgCgYd2mqXSeBpeI0MGBDysvpVzVGLuYk0HbtSFJVZqALavtWZm4VThT_m'
+                  - webhook_url_file: '/etc/alertmanager/secrets/alertmanager-discord-webhooks/DISCORD_WEBHOOK_WARNING' # pragma: allowlist secret
                     send_resolved: true
                     title: '{{ if eq .Status "firing" }}⚠️ [WARNING] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
                     content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
