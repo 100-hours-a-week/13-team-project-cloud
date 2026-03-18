@@ -35,21 +35,50 @@ spec:
             # 클러스터 내 모든 ServiceMonitor/PodMonitor 수집
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
-            # EC2 Data Layer exporter 스크랩
+            # EC2 Data Layer exporter 스크랩 (태그 기반 서비스 디스커버리)
             additionalScrapeConfigs:
               - job_name: 'prod-postgres-exporter'
-                static_configs:
-                  - targets: ['10.0.7.10:9187']
-                    labels:
-                      instance: 'prod-postgresql'
-                  - targets: ['10.0.2.174:9187']
-                    labels:
-                      instance: 'prod-postgresql-standby'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 9187
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [postgresql]
+                      - name: instance-state-name
+                        values: [running]
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    regex: '.*-(primary|standby)$'
+                    target_label: role
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
               - job_name: 'prod-redis-exporter'
-                static_configs:
-                  - targets: ['10.0.2.240:9121']
-                    labels:
-                      instance: 'prod-redis'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 9121
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [redis]
+                      - name: instance-state-name
+                        values: [running]
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    regex: '.*-(primary|standby)$'
+                    target_label: role
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
 
         # ===== AlertManager =====
         alertmanager:
