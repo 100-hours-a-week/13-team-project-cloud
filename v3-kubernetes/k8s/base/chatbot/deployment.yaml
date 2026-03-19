@@ -4,6 +4,8 @@ metadata:
   name: chatbot
   labels:
     app: chatbot
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   selector:
@@ -13,6 +15,8 @@ spec:
     metadata:
       labels:
         app: chatbot
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
       containers:
         - name: chatbot
@@ -22,8 +26,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: chatbot-config
-            # - secretRef:
-            #     name: chatbot-secret
+            - secretRef:
+                name: chatbot-secret
           startupProbe:
             httpGet:
               path: /health
