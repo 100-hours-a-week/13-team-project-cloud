@@ -27,6 +27,62 @@ spec:
               url: http://loki.monitoring.svc.cluster.local:3100
               access: proxy
               isDefault: false
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+                - name: applications
+                  orgId: 1
+                  folder: 'Applications'
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/applications
+                - name: data-layer
+                  orgId: 1
+                  folder: 'Data Layer'
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/data-layer
+                - name: logs
+                  orgId: 1
+                  folder: 'Logs'
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/logs
+          dashboards:
+            applications:
+              spring-boot:
+                gnetId: 19004
+                revision: 1
+                datasource: Prometheus
+            data-layer:
+              postgresql:
+                gnetId: 9628
+                revision: 7
+                datasource: Prometheus
+              redis:
+                gnetId: 763
+                revision: 6
+                datasource: Prometheus
+              qdrant:
+                gnetId: 21394
+                revision: 1
+                datasource: Prometheus
+              node-exporter-data:
+                gnetId: 1860
+                revision: 37
+                datasource: Prometheus
+            logs:
+              loki-logs:
+                gnetId: 13639
+                revision: 2
+                datasource: Loki
           resources:
             requests:
               cpu: 100m
