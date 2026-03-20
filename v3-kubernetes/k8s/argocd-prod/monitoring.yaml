@@ -226,14 +226,14 @@ spec:
                 discord_configs:
                   - webhook_url: '{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_CRITICAL" }}' # pragma: allowlist secret
                     send_resolved: true
-                    title: '{{ if eq .Status "firing" }}🚨 [CRITICAL] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
-                    content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
+                    title: '{{ `{{ if eq .Status "firing" }}` }}[CRITICAL] {{ `{{ else }}` }}[RESOLVED] {{ `{{ end }}{{ .GroupLabels.alertname }}` }}'
+                    content: '{{ `{{ range .Alerts }}{{ .Annotations.summary }} {{ .Annotations.description }}{{ end }}` }}'
               - name: 'warning'
                 discord_configs:
                   - webhook_url: '{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_WARNING" }}' # pragma: allowlist secret
                     send_resolved: true
-                    title: '{{ if eq .Status "firing" }}⚠️ [WARNING] {{ else }}✅ [RESOLVED] {{ end }}{{ .GroupLabels.alertname }}'
-                    content: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
+                    title: '{{ `{{ if eq .Status "firing" }}` }}[WARNING] {{ `{{ else }}` }}[RESOLVED] {{ `{{ end }}{{ .GroupLabels.alertname }}` }}'
+                    content: '{{ `{{ range .Alerts }}{{ .Annotations.summary }} {{ .Annotations.description }}{{ end }}` }}'
 
         # ===== Alert Rules =====
         additionalPrometheusRulesMap:
