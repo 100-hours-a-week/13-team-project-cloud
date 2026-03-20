@@ -21,6 +21,7 @@ keys/
 .env
 .env.*
 !.env.example
+*.auto.tfvars
 
 # k6 test tokens & reports
 v2-container/tests/lib/config.js

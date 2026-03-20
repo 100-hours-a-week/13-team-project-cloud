@@ -133,3 +133,49 @@ resource "aws_vpc_security_group_ingress_rule" "data_node_exporter_from_k8s" {
   ip_protocol                  = "tcp"
   referenced_security_group_id = aws_security_group.k8s_node.id
 }
+
+# =============================================================================
+# RabbitMQ — AMQP + Management + Prometheus 메트릭
+# =============================================================================
+resource "aws_vpc_security_group_ingress_rule" "data_rabbitmq_amqp_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 5672
+  to_port                      = 5672
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "data_rabbitmq_management_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 15672
+  to_port                      = 15672
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "data_rabbitmq_prometheus_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 15692
+  to_port                      = 15692
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
+
+# =============================================================================
+# MongoDB — 서비스 + Exporter
+# =============================================================================
+resource "aws_vpc_security_group_ingress_rule" "data_mongodb_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 27017
+  to_port                      = 27017
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "data_mongodb_exporter_from_k8s" {
+  security_group_id            = var.data_sg_id
+  from_port                    = 9216
+  to_port                      = 9216
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.k8s_node.id
+}

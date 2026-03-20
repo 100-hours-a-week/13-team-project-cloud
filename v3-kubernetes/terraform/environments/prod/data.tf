@@ -49,6 +49,43 @@ data "aws_security_group" "data" {
   }
 }
 
+# Data tier 서브넷 (MongoDB, RabbitMQ 배치)
+data "aws_subnets" "data" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.existing.id]
+  }
+
+  tags = {
+    Tier = "data"
+  }
+}
+
+data "aws_subnet" "data_primary" {
+  id = sort(data.aws_subnets.data.ids)[0]
+}
+
+# Ubuntu 24.04 ARM AMI (Data Services용 — K8s 패키지 없는 깡 Ubuntu)
+data "aws_ami" "ubuntu_arm" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-arm64-server-*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["arm64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # ACM 인증서 (dev/prod 공용)
 data "aws_acm_certificate" "main" {
   domain   = "moyeobab.com"
