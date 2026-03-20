@@ -224,15 +224,15 @@ spec:
               - name: 'null'
               - name: 'critical'
                 discord_configs:
-                  - webhook_url: '{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_CRITICAL" }}' # pragma: allowlist secret
+                  - webhook_url: '{{ `{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_CRITICAL" }}` }}' # pragma: allowlist secret
                     send_resolved: true
-                    title: '{{ `{{ if eq .Status "firing" }}` }}[CRITICAL] {{ `{{ else }}` }}[RESOLVED] {{ `{{ end }}{{ .GroupLabels.alertname }}` }}'
+                    title: '{{ `{{ if eq .Status "firing" }}[CRITICAL]{{ else }}[RESOLVED]{{ end }} {{ .GroupLabels.alertname }}` }}'
                     content: '{{ `{{ range .Alerts }}{{ .Annotations.summary }} {{ .Annotations.description }}{{ end }}` }}'
               - name: 'warning'
                 discord_configs:
-                  - webhook_url: '{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_WARNING" }}' # pragma: allowlist secret
+                  - webhook_url: '{{ `{{ readFile "/etc/alertmanager/secrets/monitoring-secrets/DISCORD_WEBHOOK_WARNING" }}` }}' # pragma: allowlist secret
                     send_resolved: true
-                    title: '{{ `{{ if eq .Status "firing" }}` }}[WARNING] {{ `{{ else }}` }}[RESOLVED] {{ `{{ end }}{{ .GroupLabels.alertname }}` }}'
+                    title: '{{ `{{ if eq .Status "firing" }}[WARNING]{{ else }}[RESOLVED]{{ end }} {{ .GroupLabels.alertname }}` }}'
                     content: '{{ `{{ range .Alerts }}{{ .Annotations.summary }} {{ .Annotations.description }}{{ end }}` }}'
 
         # ===== Alert Rules =====
