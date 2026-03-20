@@ -66,6 +66,8 @@ spec:
             # 클러스터 내 모든 ServiceMonitor/PodMonitor 수집
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
+            # ServiceMonitor의 namespaceSelector를 존중 (moyeobab 네임스페이스 타겟팅)
+            ignoreNamespaceSelectors: false
             # EC2 Data Layer exporter 스크랩 (태그 기반 서비스 디스커버리)
             additionalScrapeConfigs:
               - job_name: 'prod-postgres-exporter'
