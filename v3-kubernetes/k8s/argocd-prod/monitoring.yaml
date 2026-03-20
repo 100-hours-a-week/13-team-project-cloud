@@ -151,6 +151,43 @@ spec:
                     target_label: instance
                   - source_labels: [__meta_ec2_private_ip]
                     target_label: private_ip
+              - job_name: 'prod-rabbitmq'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 15692
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [rabbitmq]
+                      - name: instance-state-name
+                        values: [running]
+                metrics_path: /metrics
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
+              - job_name: 'prod-mongodb-exporter'
+                ec2_sd_configs:
+                  - region: ap-northeast-2
+                    port: 9216
+                    filters:
+                      - name: tag:Project
+                        values: [moyeobab]
+                      - name: tag:Environment
+                        values: [prod]
+                      - name: tag:Service
+                        values: [mongodb]
+                      - name: instance-state-name
+                        values: [running]
+                relabel_configs:
+                  - source_labels: [__meta_ec2_tag_Name]
+                    target_label: instance
+                  - source_labels: [__meta_ec2_private_ip]
+                    target_label: private_ip
 
         # ===== AlertManager =====
         alertmanager:
@@ -229,6 +266,24 @@ spec:
                     annotations:
                       summary: "PostgreSQL 다운"
                       description: "PostgreSQL 인스턴스가 응답하지 않습니다. 즉시 확인 필요."
+
+                  - alert: RabbitMQDown
+                    expr: rabbitmq_identity_info == 0
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "RabbitMQ 다운"
+                      description: "RabbitMQ 인스턴스가 응답하지 않습니다. 즉시 확인 필요."
+
+                  - alert: MongoDBDown
+                    expr: mongodb_up == 0
+                    for: 1m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "MongoDB 다운"
+                      description: "MongoDB 인스턴스가 응답하지 않습니다. 즉시 확인 필요."
 
               # --- 성능 (Spring Boot 3 Micrometer 메트릭 기준) ---
               - name: performance
@@ -331,6 +386,42 @@ spec:
                     annotations:
                       summary: "Redis 메모리 사용률 높음"
                       description: "Redis 메모리 사용률이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+                  - alert: RabbitMQHighMemory
+                    expr: rabbitmq_process_resident_memory_bytes / rabbitmq_resident_memory_limit_bytes * 100 > 80
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "RabbitMQ 메모리 사용률 높음"
+                      description: "RabbitMQ 메모리 사용률이 {{ $value | printf \"%.1f\" }}% 입니다."
+
+                  - alert: RabbitMQUnackedMessages
+                    expr: rabbitmq_queue_messages_unacked > 1000
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "RabbitMQ unacked 메시지 누적"
+                      description: "Unacked 메시지가 {{ $value }}건입니다. 컨슈머 상태 확인 필요."
+
+                  - alert: MongoDBHighConnections
+                    expr: mongodb_ss_connections{conn_type="current"} > 200
+                    for: 5m
+                    labels:
+                      severity: warning
+                    annotations:
+                      summary: "MongoDB 커넥션 높음"
+                      description: "현재 커넥션 수가 {{ $value }}개입니다."
+
+                  - alert: MongoDBReplicationLag
+                    expr: mongodb_mongod_replset_member_replication_lag > 10
+                    for: 3m
+                    labels:
+                      severity: critical
+                    annotations:
+                      summary: "MongoDB 복제 지연"
+                      description: "복제 지연이 {{ $value | printf \"%.1f\" }}초입니다."
 
         # ===== kubeadm 환경 — CP 컴포넌트 스크랩 불가 =====
         kubeEtcd:

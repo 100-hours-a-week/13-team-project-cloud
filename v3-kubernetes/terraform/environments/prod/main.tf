@@ -97,3 +97,29 @@ module "asg" {
   min_size         = var.wp_asg_min
   max_size         = var.wp_asg_max
 }
+
+# =============================================================================
+# Data Services — MongoDB + RabbitMQ EC2 (Data tier 서브넷)
+# =============================================================================
+module "data_services" {
+  source = "../../modules/data-services"
+
+  project     = local.project
+  environment = local.environment
+  app_version = local.version
+  common_tags = local.common_tags
+
+  vpc_id                = data.aws_vpc.existing.id
+  subnet_id             = data.aws_subnet.data_primary.id
+  data_sg_id            = data.aws_security_group.data.id
+  ec2_ami_id            = data.aws_ami.ubuntu_arm.id
+  instance_profile_name = module.iam.k8s_node_instance_profile_name
+
+  rabbitmq_instance_type = var.rabbitmq_instance_type
+  rabbitmq_user          = var.rabbitmq_user
+  rabbitmq_password      = var.rabbitmq_password
+
+  mongodb_instance_type  = var.mongodb_instance_type
+  mongodb_admin_user     = var.mongodb_admin_user
+  mongodb_admin_password = var.mongodb_admin_password
+}

@@ -43,3 +43,36 @@ variable "wp_asg_max" {
   type        = number
   default     = 4
 }
+
+# =============================================================================
+# Data Services — MongoDB + RabbitMQ
+# =============================================================================
+variable "rabbitmq_instance_type" {
+  type    = string
+  default = "t4g.small"
+}
+
+variable "rabbitmq_user" {
+  type    = string
+  default = "moyeobab"
+}
+
+variable "rabbitmq_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "mongodb_instance_type" {
+  type    = string
+  default = "t4g.small"
+}
+
+variable "mongodb_admin_user" {
+  type    = string
+  default = "moyeobab"
+}
+
+variable "mongodb_admin_password" {
+  type      = string
+  sensitive = true
+}
