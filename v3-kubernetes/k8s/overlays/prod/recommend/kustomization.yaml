@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - ../../../base/recommend
-  - servicemonitor.yaml
 
 patches:
   - path: patches/resources.yaml

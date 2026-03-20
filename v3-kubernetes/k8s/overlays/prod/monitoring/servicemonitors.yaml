@@ -1,0 +1,50 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - moyeobab
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: recommend
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - moyeobab
+  selector:
+    matchLabels:
+      app: recommend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: chatbot
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - moyeobab
+  selector:
+    matchLabels:
+      app: chatbot
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
