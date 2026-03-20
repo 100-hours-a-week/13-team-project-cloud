@@ -6,3 +6,9 @@ namespace: monitoring
 resources:
   - secret-store.yaml
   - external-secret.yaml
+  - dashboards/spring-boot-cm.yaml
+  - dashboards/postgresql-cm.yaml
+  - dashboards/redis-cm.yaml
+  - dashboards/qdrant-cm.yaml
+  - dashboards/node-exporter-cm.yaml
+  - dashboards/loki-logs-cm.yaml
