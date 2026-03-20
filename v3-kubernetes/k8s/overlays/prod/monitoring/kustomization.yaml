@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../../base/monitoring
+  - servicemonitors.yaml
 
 patches:
   - path: patches/external-secret.yaml
