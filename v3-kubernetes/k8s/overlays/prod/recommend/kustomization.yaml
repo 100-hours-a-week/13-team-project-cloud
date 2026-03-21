@@ -19,6 +19,8 @@ configMapGenerator:
       - LOG_LEVEL=WARNING
       - QDRANT_TIMEOUT=5.0
       - QDRANT_COLLECTION=meetup_requests
+      - OTLP_ENDPOINT=tempo.monitoring.svc.cluster.local:4317
+      - OTEL_SERVICE_NAME=recommend
 
 generatorOptions:
   disableNameSuffixHash: true
