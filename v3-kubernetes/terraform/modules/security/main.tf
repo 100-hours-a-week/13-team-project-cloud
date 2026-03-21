@@ -73,6 +73,15 @@ resource "aws_vpc_security_group_ingress_rule" "k8s_nlb_https" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+# NLB Health Check — kubelet healthz 포트 (노드 자동 교체용)
+resource "aws_vpc_security_group_ingress_rule" "k8s_nlb_health" {
+  security_group_id = aws_security_group.k8s_node.id
+  from_port         = 10248
+  to_port           = 10248
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
 # =============================================================================
 # 기존 Data SG에 K8s 노드 인바운드 추가
 # Pod → EC2 Data Layer 통신은 Node IP로 SNAT되므로 k8s-node-sg 허용
