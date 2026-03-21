@@ -48,6 +48,11 @@ spec:
             enabled: true
           kubernetesIngress:
             enabled: true
+        tracing:
+          otlp:
+            grpc:
+              endpoint: "tempo.monitoring.svc.cluster.local:4317"
+              insecure: true
         logs:
           general:
             level: INFO
