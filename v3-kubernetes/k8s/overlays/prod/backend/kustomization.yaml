@@ -12,7 +12,7 @@ patches:
 images:
   - name: moyeobab/backend
     newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-    newTag: sha-7c1a5772
+    newTag: sha-a1cbb501
 
 configMapGenerator:
   - name: backend-config
@@ -21,6 +21,7 @@ configMapGenerator:
       - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2
       - TRACING_ENABLED=true
       - OTLP_TRACING_ENDPOINT=http://tempo.monitoring.svc.cluster.local:4318/v1/traces
+      - CHAT_READ_SOURCE=pg
 
 generatorOptions:
   disableNameSuffixHash: true
