@@ -11,7 +11,7 @@ patches:
 images:
 - name: moyeobab/chatbot
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/chatbot
-  newTag: sha-2d2932d5
+  newTag: sha-a73d52be
 
 configMapGenerator:
 - literals:
