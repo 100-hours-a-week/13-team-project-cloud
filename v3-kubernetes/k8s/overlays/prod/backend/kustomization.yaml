@@ -21,7 +21,7 @@ configMapGenerator:
       - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2
       - TRACING_ENABLED=true
       - OTLP_TRACING_ENDPOINT=http://tempo.monitoring.svc.cluster.local:4318/v1/traces
-      - CHAT_READ_SOURCE=pg
+      - CHAT_READ_SOURCE=mongodb
 
 generatorOptions:
   disableNameSuffixHash: true
