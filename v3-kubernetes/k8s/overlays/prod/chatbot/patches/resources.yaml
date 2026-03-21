@@ -10,8 +10,8 @@ spec:
         - name: chatbot
           resources:
             requests:
-              cpu: 200m
-              memory: 2Gi
+              cpu: 100m
+              memory: 768Mi
             limits:
-              cpu: 1000m
-              memory: 3Gi
+              cpu: 500m
+              memory: 1536Mi
