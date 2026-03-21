@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-qdrant
+  name: grafana-dashboard-mongodb
   namespace: monitoring
   labels:
     grafana_dashboard: "1"
   annotations:
     grafana_folder: "Data Layer"
 data:
-  qdrant.json: |
+  mongodb.json: |
     {
       "panels": [
         {
@@ -35,13 +35,13 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
+            "w": 4,
             "x": 0,
             "y": 0
           },
           "targets": [
             {
-              "expr": "up{job=\"prod-qdrant\"}",
+              "expr": "mongodb_up{job=\"prod-mongodb-exporter\"}",
               "refId": "A"
             }
           ],
@@ -60,17 +60,17 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
-            "x": 6,
+            "w": 4,
+            "x": 4,
             "y": 0
           },
           "targets": [
             {
-              "expr": "qdrant_collections_total{job=\"prod-qdrant\"}",
+              "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"current\"}",
               "refId": "A"
             }
           ],
-          "title": "Collections",
+          "title": "Connections",
           "type": "stat"
         },
         {
@@ -85,17 +85,17 @@ data:
           },
           "gridPos": {
             "h": 4,
-            "w": 6,
-            "x": 12,
+            "w": 4,
+            "x": 8,
             "y": 0
           },
           "targets": [
             {
-              "expr": "sum(qdrant_points_total{job=\"prod-qdrant\"})",
+              "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"available\"}",
               "refId": "A"
             }
           ],
-          "title": "Vectors",
+          "title": "Available Connections",
           "type": "stat"
         },
         {
@@ -111,12 +111,12 @@ data:
           },
           "targets": [
             {
-              "expr": "rate(qdrant_rest_responses_total{job=\"prod-qdrant\"}[1m])",
-              "legendFormat": "{{method}} [{{status}}]",
+              "expr": "rate(mongodb_ss_opcounters{job=\"prod-mongodb-exporter\"}[1m])",
+              "legendFormat": "{{legacy_op_type}}",
               "refId": "A"
             }
           ],
-          "title": "REST Requests/sec",
+          "title": "Operations/sec",
           "type": "timeseries"
         },
         {
@@ -132,12 +132,69 @@ data:
           },
           "targets": [
             {
-              "expr": "rate(qdrant_grpc_responses_total{job=\"prod-qdrant\"}[1m])",
-              "legendFormat": "{{method}}",
+              "expr": "rate(mongodb_ss_metrics_document{job=\"prod-mongodb-exporter\"}[1m])",
+              "legendFormat": "{{doc_op_type}}",
               "refId": "A"
             }
           ],
-          "title": "gRPC Requests/sec",
+          "title": "Document Operations/sec",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "mongodb_ss_mem_resident{job=\"prod-mongodb-exporter\"}*1024*1024",
+              "legendFormat": "Resident",
+              "refId": "A"
+            },
+            {
+              "expr": "mongodb_ss_mem_virtual{job=\"prod-mongodb-exporter\"}*1024*1024",
+              "legendFormat": "Virtual",
+              "refId": "B"
+            }
+          ],
+          "title": "Memory",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "mongodb_mongod_replset_member_replication_lag{job=\"prod-mongodb-exporter\"}",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Replication Lag",
           "type": "timeseries"
         }
       ],
@@ -145,12 +202,12 @@ data:
       "schemaVersion": 39,
       "tags": [
         "data-layer",
-        "qdrant",
+        "mongodb",
         "custom"
       ],
       "templating": {
         "list": []
       },
       "timezone": "browser",
-      "title": "Qdrant - Moyeobab"
+      "title": "MongoDB - Moyeobab"
     }

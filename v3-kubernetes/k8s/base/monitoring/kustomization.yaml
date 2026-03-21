@@ -12,3 +12,5 @@ resources:
   - dashboards/qdrant-cm.yaml
   - dashboards/node-exporter-cm.yaml
   - dashboards/loki-logs-cm.yaml
+  - dashboards/rabbitmq-cm.yaml
+  - dashboards/mongodb-cm.yaml
