@@ -11,7 +11,7 @@ patches:
 images:
 - name: moyeobab/backend
   newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-  newTag: sha-7c1a5772
+  newTag: sha-a1cbb501
 
 configMapGenerator:
 - literals:
