@@ -17,6 +17,8 @@ configMapGenerator:
   - name: chatbot-config
     literals:
       - LOG_LEVEL=WARNING
+      - OTLP_ENDPOINT=tempo.monitoring.svc.cluster.local:4317
+      - OTEL_SERVICE_NAME=chatbot
 
 generatorOptions:
   disableNameSuffixHash: true

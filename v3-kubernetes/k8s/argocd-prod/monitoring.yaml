@@ -27,6 +27,20 @@ spec:
               url: http://loki.monitoring.svc.cluster.local:3100
               access: proxy
               isDefault: false
+            - name: Tempo
+              type: tempo
+              url: http://tempo.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false
+              jsonData:
+                tracesToLogsV2:
+                  datasourceUid: P8E80F9AEF21F6940
+                  filterByTraceID: true
+                  filterBySpanID: true
+                tracesToMetrics:
+                  datasourceUid: prometheus
+                nodeGraph:
+                  enabled: true
           # 대시보드는 ConfigMap + sidecar 방식으로 프로비저닝
           # (base/monitoring/dashboards/*-cm.yaml, label: grafana_dashboard=1)
           sidecar:
