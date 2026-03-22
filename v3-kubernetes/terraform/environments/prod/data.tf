@@ -61,8 +61,9 @@ data "aws_subnets" "data" {
   }
 }
 
+# 기존 data 서브넷 고정 (sort 변경으로 인한 EC2 재생성 방지)
 data "aws_subnet" "data_primary" {
-  id = sort(data.aws_subnets.data.ids)[0]
+  id = "subnet-024db6a6842a6ce45"
 }
 
 # Ubuntu 24.04 ARM AMI (Data Services용 — K8s 패키지 없는 깡 Ubuntu)

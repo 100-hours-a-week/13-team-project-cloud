@@ -3,11 +3,13 @@ kind: Kustomization
 
 resources:
   - ../../../base/backend
+  - pdb.yaml
 
 patches:
   - path: patches/resources.yaml
   - path: patches/external-secret.yaml
   - path: patches/service.yaml
+  - path: patches/scheduling.yaml
 
 images:
   - name: moyeobab/backend

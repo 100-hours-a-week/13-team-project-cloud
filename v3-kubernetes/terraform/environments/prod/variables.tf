@@ -29,13 +29,13 @@ variable "wp_instance_type" {
 variable "wp_asg_desired" {
   description = "Worker ASG desired capacity"
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "wp_asg_min" {
   description = "Worker ASG min size"
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "wp_asg_max" {
