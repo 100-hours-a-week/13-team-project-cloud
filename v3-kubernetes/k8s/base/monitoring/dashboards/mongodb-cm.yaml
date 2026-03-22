@@ -12,202 +12,333 @@ data:
     {
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": 0
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              },
-              "unit": "short"
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 0,
-            "y": 0
-          },
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "title": "Chat Activity",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
           "targets": [
-            {
-              "expr": "mongodb_up{job=\"prod-mongodb-exporter\"}",
-              "refId": "A"
-            }
+            { "expr": "sum(chat_message_send_attempt_total)", "refId": "A" }
           ],
-          "title": "Up",
+          "title": "Send Attempts",
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+          "targets": [
+            { "expr": "sum(chat_message_send_accepted_total)", "refId": "A" }
+          ],
+          "title": "Accepted",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+          "targets": [
+            { "expr": "sum(chat_message_persisted_total)", "refId": "A" }
+          ],
+          "title": "Persisted",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+          "targets": [
+            { "expr": "sum(chat_read_pointer_update_total)", "refId": "A" }
+          ],
+          "title": "Read Pointer Updates",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+          "targets": [
+            { "expr": "sum(chat_cache_messages_recent_lookup_total)", "refId": "A" }
+          ],
+          "title": "Cache Lookups",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "short" },
+            "overrides": []
           },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "sum(rate(chat_message_send_attempt_total[1m]))", "legendFormat": "attempt", "refId": "A" },
+            { "expr": "sum(rate(chat_message_send_accepted_total[1m]))", "legendFormat": "accepted", "refId": "B" },
+            { "expr": "sum(rate(chat_message_persisted_total[1m]))", "legendFormat": "persisted", "refId": "C" }
+          ],
+          "title": "Chat Messages/sec",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "sum by (type) (rate(chat_message_persisted_total[1m]))", "legendFormat": "{{type}}", "refId": "A" }
+          ],
+          "title": "Messages by Type/sec",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+          "title": "Dual-Write Sync (MongoDB ↔ PostgreSQL)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "ops" },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "MongoDB Insert/sec" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "PG Insert/sec" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "rate(mongodb_ss_opcounters{job=\"prod-mongodb-exporter\",legacy_op_type=\"insert\"}[1m])", "legendFormat": "MongoDB Insert/sec", "refId": "A" },
+            { "expr": "rate(pg_stat_user_tables_n_tup_ins{job=\"prod-postgres-exporter\",relname=\"chat_messages\"}[1m])", "legendFormat": "PG Insert/sec", "refId": "B" }
+          ],
+          "title": "Dual-Write: Insert Rate Comparison",
+          "description": "듀얼 라이트 동작 확인: 두 라인이 함께 움직이면 정상",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "ops" },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "MongoDB Query/sec" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "PG Select/sec (chat_messages)" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "rate(mongodb_ss_opcounters{job=\"prod-mongodb-exporter\",legacy_op_type=\"query\"}[1m])", "legendFormat": "MongoDB Query/sec", "refId": "A" },
+            { "expr": "rate(pg_stat_user_tables_seq_scan{job=\"prod-postgres-exporter\",relname=\"chat_messages\"}[1m]) + rate(pg_stat_user_tables_idx_scan{job=\"prod-postgres-exporter\",relname=\"chat_messages\"}[1m])", "legendFormat": "PG Select/sec (chat_messages)", "refId": "B" }
+          ],
+          "title": "Read Source: Query Rate Comparison",
+          "description": "읽기 소스 전환 확인: CHAT_READ_SOURCE=mongodb 시 MongoDB query 증가, PG select 감소",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+          "title": "MongoDB",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
+              "thresholds": { "steps": [ { "color": "red", "value": 0 }, { "color": "green", "value": 1 } ] },
               "unit": "short"
             }
           },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 4,
-            "y": 0
-          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 23 },
           "targets": [
-            {
-              "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"current\"}",
-              "refId": "A"
-            }
+            { "expr": "mongodb_up{job=\"prod-mongodb-exporter\"}", "refId": "A" }
+          ],
+          "title": "MongoDB Up",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 23 },
+          "targets": [
+            { "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"current\"}", "refId": "A" }
           ],
           "title": "Connections",
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short"
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 8,
-            "y": 0
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 23 },
           "targets": [
-            {
-              "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"available\"}",
-              "refId": "A"
-            }
+            { "expr": "mongodb_ss_connections{job=\"prod-mongodb-exporter\",conn_type=\"available\"}", "refId": "A" }
           ],
           "title": "Available Connections",
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 4
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+          "options": { "tooltip": { "mode": "multi" } },
           "targets": [
-            {
-              "expr": "rate(mongodb_ss_opcounters{job=\"prod-mongodb-exporter\"}[1m])",
-              "legendFormat": "{{legacy_op_type}}",
-              "refId": "A"
-            }
+            { "expr": "rate(mongodb_ss_opcounters{job=\"prod-mongodb-exporter\"}[1m])", "legendFormat": "{{legacy_op_type}}", "refId": "A" }
           ],
-          "title": "Operations/sec",
+          "title": "MongoDB Operations/sec",
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 4
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+          "options": { "tooltip": { "mode": "multi" } },
           "targets": [
-            {
-              "expr": "rate(mongodb_ss_metrics_document{job=\"prod-mongodb-exporter\"}[1m])",
-              "legendFormat": "{{doc_op_type}}",
-              "refId": "A"
-            }
+            { "expr": "rate(mongodb_ss_metrics_document{job=\"prod-mongodb-exporter\"}[1m])", "legendFormat": "{{doc_op_type}}", "refId": "A" }
           ],
           "title": "Document Operations/sec",
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes"
-            }
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 12
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+          "options": { "tooltip": { "mode": "multi" } },
           "targets": [
-            {
-              "expr": "mongodb_ss_mem_resident{job=\"prod-mongodb-exporter\"}*1024*1024",
-              "legendFormat": "Resident",
-              "refId": "A"
-            },
-            {
-              "expr": "mongodb_ss_mem_virtual{job=\"prod-mongodb-exporter\"}*1024*1024",
-              "legendFormat": "Virtual",
-              "refId": "B"
-            }
+            { "expr": "mongodb_ss_mem_resident{job=\"prod-mongodb-exporter\"}*1024*1024", "legendFormat": "Resident", "refId": "A" },
+            { "expr": "mongodb_ss_mem_virtual{job=\"prod-mongodb-exporter\"}*1024*1024", "legendFormat": "Virtual", "refId": "B" }
           ],
-          "title": "Memory",
+          "title": "MongoDB Memory",
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s"
-            }
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 12
-          },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+          "options": { "tooltip": { "mode": "multi" } },
           "targets": [
-            {
-              "expr": "mongodb_mongod_replset_member_replication_lag{job=\"prod-mongodb-exporter\"}",
-              "legendFormat": "{{name}}",
-              "refId": "A"
-            }
+            { "expr": "rate(mongodb_ss_network_bytesIn{job=\"prod-mongodb-exporter\"}[1m])", "legendFormat": "Bytes In", "refId": "A" },
+            { "expr": "rate(mongodb_ss_network_bytesOut{job=\"prod-mongodb-exporter\"}[1m])", "legendFormat": "Bytes Out", "refId": "B" }
           ],
-          "title": "Replication Lag",
+          "title": "MongoDB Network I/O",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 },
+          "title": "PostgreSQL (Dual-Write)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 44 },
+          "targets": [
+            { "expr": "pg_up{job=\"prod-postgres-exporter\"}", "refId": "A" }
+          ],
+          "title": "PostgreSQL Up",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 44 },
+          "targets": [
+            { "expr": "pg_stat_activity_count{job=\"prod-postgres-exporter\",state=\"active\"}", "refId": "A" }
+          ],
+          "title": "Active Connections",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 44 },
+          "targets": [
+            { "expr": "pg_stat_activity_max_tx_duration{job=\"prod-postgres-exporter\"}", "refId": "A" }
+          ],
+          "title": "Max TX Duration",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "rate(pg_stat_user_tables_n_tup_ins{job=\"prod-postgres-exporter\",relname=\"chat_messages\"}[1m])", "legendFormat": "inserts/sec", "refId": "A" },
+            { "expr": "rate(pg_stat_user_tables_n_tup_upd{job=\"prod-postgres-exporter\",relname=\"chat_messages\"}[1m])", "legendFormat": "updates/sec", "refId": "B" }
+          ],
+          "title": "PG chat_messages Writes/sec",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "rate(pg_stat_user_tables_n_tup_ins{job=\"prod-postgres-exporter\",relname=\"meetings\"}[1m])", "legendFormat": "meetings inserts", "refId": "A" },
+            { "expr": "rate(pg_stat_user_tables_n_tup_upd{job=\"prod-postgres-exporter\",relname=\"meetings\"}[1m])", "legendFormat": "meetings updates", "refId": "B" },
+            { "expr": "rate(pg_stat_user_tables_n_tup_upd{job=\"prod-postgres-exporter\",relname=\"meeting_participants\"}[1m])", "legendFormat": "participants updates", "refId": "C" }
+          ],
+          "title": "PG Meeting Tables Writes/sec",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
+          "title": "Chat API (HTTP REST)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 57 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=~\"/api/v2/meetings/.*\"}[1m])) by (le))", "legendFormat": "P50", "refId": "A" },
+            { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=~\"/api/v2/meetings/.*\"}[1m])) by (le))", "legendFormat": "P95", "refId": "B" },
+            { "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=~\"/api/v2/meetings/.*\"}[1m])) by (le))", "legendFormat": "P99", "refId": "C" }
+          ],
+          "title": "Chat REST API Latency",
+          "description": "HTTP REST 엔드포인트만 (메시지 조회, 읽음 포인터). 메시지 전송은 WebSocket → Chat Activity 참고",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 57 },
+          "options": { "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "expr": "sum by (uri) (rate(http_server_requests_seconds_count{uri=~\"/api/v2/meetings/.*\"}[1m]))", "legendFormat": "{{uri}}", "refId": "A" },
+            { "expr": "sum(rate(http_server_requests_seconds_count{uri=~\"/api/v2/meetings/.*\",status=~\"5..\"}[1m]))", "legendFormat": "5xx errors/sec", "refId": "B" }
+          ],
+          "title": "Chat REST API Throughput & Errors",
+          "description": "URI별 HTTP 요청 처리량 + 5xx 에러율",
           "type": "timeseries"
         }
       ],
-      "refresh": "30s",
+      "refresh": "10s",
       "schemaVersion": 39,
       "tags": [
         "data-layer",
         "mongodb",
+        "chat",
+        "migration",
         "custom"
       ],
-      "templating": {
-        "list": []
-      },
+      "templating": { "list": [] },
       "timezone": "browser",
-      "title": "MongoDB - Moyeobab"
+      "title": "Chat Migration - Moyeobab"
     }
