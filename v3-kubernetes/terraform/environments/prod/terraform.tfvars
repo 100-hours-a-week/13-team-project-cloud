@@ -5,4 +5,4 @@ ec2_ami_id = "ami-04b47c7d72b84efef"
 # admin_cidr_blocks = ["x.x.x.x/32"]
 
 cp_instance_type = "t4g.medium"
-wp_instance_type = "t4g.medium"
+wp_instance_type = "t4g.large"

@@ -3,10 +3,12 @@ kind: Kustomization
 
 resources:
   - ../../../base/recommend
+  - pdb.yaml
 
 patches:
   - path: patches/resources.yaml
   - path: patches/external-secret.yaml
+  - path: patches/scheduling.yaml
 
 images:
   - name: moyeobab/recommend

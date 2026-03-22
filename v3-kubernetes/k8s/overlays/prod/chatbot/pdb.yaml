@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chatbot-pdb
+  namespace: moyeobab
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: chatbot
