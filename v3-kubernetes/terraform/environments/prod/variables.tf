@@ -76,3 +76,11 @@ variable "mongodb_admin_password" {
   type      = string
   sensitive = true
 }
+
+# =============================================================================
+# Redis
+# =============================================================================
+variable "redis_password" {
+  type      = string
+  sensitive = true
+}
