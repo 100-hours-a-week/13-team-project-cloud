@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-api-performance
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Applications"
+data:
+  api-performance.json: |
+    {
+      "uid": "api-performance-moyeobab",
+      "title": "API Performance - Moyeobab",
+      "tags": ["moyeobab", "api", "performance"],
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "title": "API Response Time — P95 by Endpoint",
+          "type": "timeseries",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"] } },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{namespace=\"moyeobab\", status!~\"4..\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (le, uri, method))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "API Response Time — P90 by Endpoint",
+          "type": "timeseries",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"] } },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.90, sum(rate(http_server_requests_seconds_bucket{namespace=\"moyeobab\", status!~\"4..\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (le, uri, method))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "P50 / P95 / P99 Overall",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "showPoints": "never" }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{namespace=\"moyeobab\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (le))",
+              "legendFormat": "P50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{namespace=\"moyeobab\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (le))",
+              "legendFormat": "P95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{namespace=\"moyeobab\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (le))",
+              "legendFormat": "P99",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "title": "Throughput by Endpoint (req/sec)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "stacking": { "mode": "normal" } }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] } },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"moyeobab\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (uri, method)",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Error Rate by Endpoint",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+              "color": { "mode": "palette-classic" },
+              "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.01 }] }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] } },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"moyeobab\", status=~\"5..\", uri!~\"/actuator.*|/api/csrf|/api/dev/.*\"}[2m])) by (uri, method)",
+              "legendFormat": "5xx {{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "HikariCP Active Connections",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 6, "x": 12, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "expr": "hikaricp_connections_active{namespace=\"moyeobab\"}",
+              "legendFormat": "active ({{pod}})",
+              "refId": "A"
+            },
+            {
+              "expr": "hikaricp_connections_idle{namespace=\"moyeobab\"}",
+              "legendFormat": "idle ({{pod}})",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "title": "HikariCP Connection Wait Time",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 6, "x": 18, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+              "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 0.5 }] }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "expr": "rate(hikaricp_connections_acquire_seconds_sum{namespace=\"moyeobab\"}[2m]) / rate(hikaricp_connections_acquire_seconds_count{namespace=\"moyeobab\"}[2m])",
+              "legendFormat": "acquire avg ({{pod}})",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "version": 1,
+      "templating": { "list": [] }
+    }
