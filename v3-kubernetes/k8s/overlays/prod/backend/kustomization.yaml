@@ -2,28 +2,28 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../../base/backend
-  - pdb.yaml
+- ../../../base/backend
+- pdb.yaml
 
 patches:
-  - path: patches/resources.yaml
-  - path: patches/external-secret.yaml
-  - path: patches/service.yaml
-  - path: patches/scheduling.yaml
+- path: patches/resources.yaml
+- path: patches/external-secret.yaml
+- path: patches/service.yaml
+- path: patches/scheduling.yaml
 
 images:
-  - name: moyeobab/backend
-    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
-    newTag: sha-d9092543
+- name: moyeobab/backend
+  newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/backend
+  newTag: sha-75047030
 
 configMapGenerator:
-  - name: backend-config
-    literals:
-      - SPRING_PROFILES_ACTIVE=prod
-      - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2
-      - TRACING_ENABLED=true
-      - OTLP_TRACING_ENDPOINT=http://tempo.monitoring.svc.cluster.local:4318/v1/traces
-      - CHAT_READ_SOURCE=mongodb
+- literals:
+  - SPRING_PROFILES_ACTIVE=prod
+  - AI_RECOMMENDATION_BASE_URL=http://recommend:8000/api/v2
+  - TRACING_ENABLED=true
+  - OTLP_TRACING_ENDPOINT=http://tempo.monitoring.svc.cluster.local:4318/v1/traces
+  - CHAT_READ_SOURCE=mongodb
+  name: backend-config
 
 generatorOptions:
   disableNameSuffixHash: true
