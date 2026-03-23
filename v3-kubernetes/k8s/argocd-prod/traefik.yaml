@@ -49,6 +49,8 @@ spec:
           kubernetesIngress:
             enabled: true
         tracing:
+          serviceName: traefik
+          addInternals: true
           otlp:
             grpc:
               endpoint: "tempo.monitoring.svc.cluster.local:4317"
