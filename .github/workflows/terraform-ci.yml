@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "v2-container/terraform/**"
+      - "v3-kubernetes/terraform/**"
       - ".github/workflows/terraform-ci.yml"
 
 permissions:
@@ -17,69 +17,11 @@ concurrency:
 
 jobs:
   # =============================================================================
-  # 변경된 환경 감지
-  # =============================================================================
-  changes:
-    name: Detect Changed Environments
-    runs-on: ubuntu-24.04-arm
-    outputs:
-      dev: ${{ steps.filter.outputs.dev }}
-      prod: ${{ steps.filter.outputs.prod }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            dev:
-              - 'v2-container/terraform/environments/dev/**'
-              - 'v2-container/terraform/modules/**'
-            prod:
-              - 'v2-container/terraform/environments/prod/**'
-              - 'v2-container/terraform/modules/**'
-
-  # =============================================================================
-  # Dev 비용 분석
-  # =============================================================================
-  cost-dev:
-    name: Infracost (dev)
-    needs: changes
-    if: needs.changes.outputs.dev == 'true'
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: infracost/actions/setup@v3
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Cost breakdown
-        run: |
-          infracost breakdown \
-            --path=v2-container/terraform/environments/dev \
-            --format=json \
-            --out-file=/tmp/infracost.json
-
-      - name: Notify Discord
-        if: always()
-        env:
-          WEBHOOK: ${{ secrets.INFRACOST_DISCORD_WEBHOOK_URL }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          PR_NUM: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          bash .github/scripts/notify-infracost.sh "dev" "3066993"
-
-  # =============================================================================
   # Prod 비용 분석
   # =============================================================================
   cost-prod:
     name: Infracost (prod)
-    needs: changes
-    if: needs.changes.outputs.prod == 'true'
     runs-on: ubuntu-24.04-arm
-    # environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -90,7 +32,7 @@ jobs:
       - name: Cost breakdown
         run: |
           infracost breakdown \
-            --path=v2-container/terraform/environments/prod \
+            --path=v3-kubernetes/terraform/environments/prod \
             --format=json \
             --out-file=/tmp/infracost.json
 
