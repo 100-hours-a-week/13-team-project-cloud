@@ -2,25 +2,25 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../../base/chatbot
-  - pdb.yaml
+- ../../../base/chatbot
+- pdb.yaml
 
 patches:
-  - path: patches/resources.yaml
-  - path: patches/external-secret.yaml
-  - path: patches/scheduling.yaml
+- path: patches/resources.yaml
+- path: patches/external-secret.yaml
+- path: patches/scheduling.yaml
 
 images:
-  - name: moyeobab/chatbot
-    newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/chatbot
-    newTag: sha-a73d52be
+- name: moyeobab/chatbot
+  newName: 676267940634.dkr.ecr.ap-northeast-2.amazonaws.com/moyeobab/chatbot
+  newTag: sha-cbb90044
 
 configMapGenerator:
-  - name: chatbot-config
-    literals:
-      - LOG_LEVEL=WARNING
-      - OTLP_ENDPOINT=tempo.monitoring.svc.cluster.local:4317
-      - OTEL_SERVICE_NAME=chatbot
+- literals:
+  - LOG_LEVEL=WARNING
+  - OTLP_ENDPOINT=tempo.monitoring.svc.cluster.local:4317
+  - OTEL_SERVICE_NAME=chatbot
+  name: chatbot-config
 
 generatorOptions:
   disableNameSuffixHash: true
